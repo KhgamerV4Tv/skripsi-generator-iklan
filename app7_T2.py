@@ -232,7 +232,7 @@ st.set_page_config(page_title="Inamikro Ad Generator PRO", layout="wide", page_i
 
 # --- HEADER APLIKASI ---
 st.markdown("<h1 style='text-align: center; color: #1E88E5;'>🚀 Inamikro Ad Generator PRO</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; color: gray;'>Aplikasi Pembuat Konten Iklan Multimodal Berbasis Gemini Pro & Imagen 3 (Revisi Bimbingan 4)</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: gray;'>Aplikasi Pembuat Konten Iklan Multimodal Berbasis Gemini Pro & Imagen 3 </p>", unsafe_allow_html=True)
 st.divider()
 
 if not VERTEX_CONNECTION_SUCCESS:
