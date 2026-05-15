@@ -914,7 +914,7 @@ with col_result:
         # ============ TAMBAHAN PAK GREG: BROSUR DIGITAL ============
         with st.expander("✏️ Tambahkan Teks Brosur ke Gambar (Untuk Promo / Cetak)", expanded=False):
             st.caption(
-                "💡 **Pak Greg:** \"Tambah tulisan promo langsung di atas gambar, "
+                "💡 \"Tambah tulisan promo langsung di atas gambar, "
                 "biar bisa langsung cetak atau posting.\""
             )
 
