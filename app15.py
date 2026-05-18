@@ -172,26 +172,37 @@ def evaluate_ad_quality(nama_produk, platform, generated_ad):
     return llm_evaluator.invoke([DummyMsg(prompt)]).content
 
 # ==============================================================================
-# TIGA MODEL GENERATOR VISUAL UNTUK BAB 4 KOMPARASI SKRIPSI (BEBAS VERTEX AI)
+# TIGA MODEL GENERATOR VISUAL UNTUK BAB 4 KOMPARASI SKRIPSI (ASLI 100%)
 # ==============================================================================
 @st.cache_data(show_spinner=False)
 def generate_imagen_image(prompt_text):
     if not prompt_text: return None
+    full_prompt = (
+        f"professional product photography, {prompt_text}, "
+        "photorealistic, highly detailed, 8k resolution, "
+        "commercial advertisement style, no text overlay, "
+        "sharp focus, beautiful cinematic lighting."
+    )
     try:
-        # Menggunakan Jalur SDK Baru `google.genai` untuk Imagen 3 (Bebas dari Error 503 GCE Metadata)
-        from google import genai as new_genai
-        client = new_genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
-        result = client.models.generate_images(
-            model='imagen-3.0-generate-001',
-            prompt=f"professional commercial photography, {prompt_text}, highly detailed, sharp focus, 8k resolution, no text overlay",
-            config=new_genai.types.GenerateImagesConfig(
-                number_of_images=1,
-                aspect_ratio="1:1"
-            )
-        )
-        return result.generated_images[0].image.image_bytes
+        from vertexai.vision_models import ImageGenerationModel
+        import vertexai
+        
+        # Penanganan aman agar tidak timeout 120s jika rahasia belum diset
+        try:
+            from google.oauth2.service_account import Credentials
+            if "GCP_SERVICE_ACCOUNT" in st.secrets:
+                creds = Credentials.from_service_account_info(st.secrets["GCP_SERVICE_ACCOUNT"])
+                vertexai.init(project="careful-ensign-477104-p5", location="us-central1", credentials=creds)
+            else:
+                vertexai.init(project="careful-ensign-477104-p5", location="us-central1")
+        except Exception:
+            vertexai.init(project="careful-ensign-477104-p5", location="us-central1")
+
+        model = ImageGenerationModel.from_pretrained("imagen-3.0-generate-001")
+        response = model.generate_images(prompt=full_prompt, number_of_images=1, aspect_ratio="1:1")
+        return response.images[0]._image_bytes
     except Exception as e:
-        st.error(f"Model A (Imagen 3) Error: {e}")
+        st.error(f"Gagal generate gambar Imagen. Pesan: {e}")
         return None
 
 @st.cache_data(show_spinner=False)
@@ -199,53 +210,55 @@ def generate_dalle_image(prompt_text):
     if not prompt_text: return None
     try:
         client = openai.OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
-        safe_prompt = prompt_text[:900]
-        try:
-            # Eksperimen Model B utama sesuai codebase asli penelitian Kevin
-            res = client.images.generate(model="gpt-image-2", prompt=safe_prompt, size="1024x1024", n=1)
-            if res.data[0].url: return requests.get(res.data[0].url).content
-        except Exception:
-            pass
+        safe_prompt = prompt_text[:900] 
         
-        # Fallback resmi ke DALL-E 2 jika model custom mengembalikan nilai kosong
-        res2 = client.images.generate(model="dall-e-2", prompt=safe_prompt, size="512x512", n=1)
-        if res2.data[0].url: return requests.get(res2.data[0].url).content
+        # MURNI HANYA MEMANGGIL gpt-image-2 SESUAI INSTRUKSI KEVIN
+        res = client.images.generate(model="gpt-image-2", prompt=safe_prompt, size="1024x1024", n=1)
+        if res.data[0].url: 
+            return requests.get(res.data[0].url).content
+        if hasattr(res.data[0], 'b64_json') and res.data[0].b64_json: 
+            return base64.b64decode(res.data[0].b64_json)
+            
     except Exception as e:
-        st.error(f"Model B (OpenAI API) Error: {e}")
-    return None
+        st.error(f"Gagal total menghubungi OpenAI (gpt-image-2): {e}")
+        return None
 
 @st.cache_data(show_spinner=False)
 def generate_gemini_flash_image(prompt_text):
     if not prompt_text: return None
+    safe_prompt = prompt_text[:900]
     try:
-        safe_prompt = prompt_text[:900]
-        try:
-            # Eksperimen Model C menggunakan Nano-Banana-2 di Google Studio
-            genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-            model = genai.GenerativeModel('models/nano-banana-2')
-            res = model.generate_content(safe_prompt)
-            for cand in res.candidates:
-                for part in cand.content.parts:
-                    if hasattr(part, 'inline_data') and part.inline_data:
-                        return part.inline_data.data
-        except Exception:
-            pass
-            
-        # Fallback murni via SDK Baru `google.genai` ke Imagen Fast (Anti Timeout)
-        from google import genai as new_genai
-        client = new_genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
-        result = client.models.generate_images(
-            model='imagen-3.0-fast-generate-001',
-            prompt=f"dynamic colorful social media ad, {safe_prompt}",
-            config=new_genai.types.GenerateImagesConfig(
-                number_of_images=1,
-                aspect_ratio="1:1"
-            )
-        )
-        return result.generated_images[0].image.image_bytes
+        # Skenario Utama: Nano Banana 2
+        genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+        model = genai.GenerativeModel('models/nano-banana-2')
+        res = model.generate_content(safe_prompt)
+        for cand in res.candidates:
+            for part in cand.content.parts:
+                if hasattr(part, 'inline_data') and part.inline_data:
+                    return part.inline_data.data
     except Exception as e:
-        st.error(f"Model C Error: {e}")
-        return None
+        print(f"Nano Banana 2 AI Studio gagal, pindah ke Vertex AI... Error: {e}")
+        
+        # Skenario Fallback: Imagen Fast Generate 001
+        try:
+            from vertexai.vision_models import ImageGenerationModel
+            import vertexai
+            try:
+                from google.oauth2.service_account import Credentials
+                if "GCP_SERVICE_ACCOUNT" in st.secrets:
+                    creds = Credentials.from_service_account_info(st.secrets["GCP_SERVICE_ACCOUNT"])
+                    vertexai.init(project="careful-ensign-477104-p5", location="us-central1", credentials=creds)
+                else:
+                    vertexai.init(project="careful-ensign-477104-p5", location="us-central1")
+            except Exception:
+                vertexai.init(project="careful-ensign-477104-p5", location="us-central1")
+
+            model = ImageGenerationModel.from_pretrained("imagen-3.0-fast-generate-001")
+            res_vertex = model.generate_images(prompt=safe_prompt, number_of_images=1, aspect_ratio="1:1")
+            return res_vertex.images[0]._image_bytes
+        except Exception as ex:
+            st.error("Semua jalur Google AI (AI Studio & Vertex) buntu.")
+            return None
 
 # ==============================================================================
 # POST-PROCESSING (LOGO & WATERMARK UMKM)
