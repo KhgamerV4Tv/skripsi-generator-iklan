@@ -12,7 +12,7 @@ import google.generativeai as genai
 # ==============================================================================
 # KONFIGURASI HALAMAN & CSS
 # ==============================================================================
-st.set_page_config(page_title="Inamikro Ad Generator V16 Final", layout="wide", page_icon="📈")
+st.set_page_config(page_title="Inamikro Ad Generator V16", layout="wide", page_icon="📈")
 
 st.markdown("""
 <style>
@@ -172,80 +172,45 @@ def evaluate_ad_quality(nama_produk, platform, generated_ad):
     return llm_evaluator.invoke([DummyMsg(prompt)]).content
 
 # ==============================================================================
-# IMAGE GENERATORS (PERSIS SESUAI KODE KEVIN)
+# IMAGE GENERATORS
 # ==============================================================================
 @st.cache_data(show_spinner=False)
 def generate_imagen_image(prompt_text):
-    if not prompt_text: return None
-    full_prompt = (
-        f"professional product photography, {prompt_text}, "
-        "photorealistic, highly detailed, 8k resolution, "
-        "commercial advertisement style, no text overlay, "
-        "sharp focus, beautiful cinematic lighting."
-    )
     try:
         from vertexai.vision_models import ImageGenerationModel
         import vertexai
         vertexai.init(project="careful-ensign-477104-p5", location="us-central1")
         model = ImageGenerationModel.from_pretrained("imagen-3.0-generate-001")
-        response = model.generate_images(prompt=full_prompt, number_of_images=1, aspect_ratio="1:1")
-        return response.images[0]._image_bytes
+        res = model.generate_images(prompt=f"commercial photography, {prompt_text}, sharp focus, 8k", number_of_images=1, aspect_ratio="1:1")
+        return res.images[0]._image_bytes
     except Exception as e:
-        st.error(f"Gagal generate gambar. Pesan dari Google: {e}")
+        st.error(f"GCP Vertex AI Gagal: {e}")
         return None
 
 @st.cache_data(show_spinner=False)
 def generate_dalle_image(prompt_text):
-    if not prompt_text: return None
     try:
         client = openai.OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
-        safe_prompt = prompt_text[:900] 
-        try:
-            res = client.images.generate(model="gpt-image-2", prompt=safe_prompt, size="1024x1024", n=1)
-            if res.data[0].url: 
-                return requests.get(res.data[0].url).content
-            if hasattr(res.data[0], 'b64_json') and res.data[0].b64_json: 
-                return base64.b64decode(res.data[0].b64_json)
-        except Exception as e:
-            print(f"gpt-image-2 gagal, mencoba dall-e-2... Error: {e}")
-        
-        res2 = client.images.generate(model="dall-e-2", prompt=safe_prompt, size="512x512", n=1)
-        if res2.data[0].url: 
-            return requests.get(res2.data[0].url).content
-        st.error("Server OpenAI merespons, tapi gambar kosong.")
-        return None
-    except Exception as e:
-        st.error(f"Gagal total menghubungi OpenAI: {e}")
-        return None
+        res = client.images.generate(model="dall-e-3", prompt=prompt_text[:900], size="1024x1024", n=1)
+        if res.data[0].url:
+            response = requests.get(res.data[0].url)
+            if response.status_code == 200:
+                return response.content
+    except Exception as e: 
+        st.error(f"OpenAI Gagal: {e}")
+    return None
 
 @st.cache_data(show_spinner=False)
 def generate_gemini_flash_image(prompt_text):
-    if not prompt_text: return None
     try:
-        safe_prompt = prompt_text[:900]
-        try:
-            genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-            model = genai.GenerativeModel('models/nano-banana-2')
-            res = model.generate_content(safe_prompt)
-            for cand in res.candidates:
-                for part in cand.content.parts:
-                    if hasattr(part, 'inline_data') and part.inline_data:
-                        return part.inline_data.data
-        except Exception as e:
-            print(f"Nano Banana 2 AI Studio gagal, pindah ke Vertex AI... Error: {e}")
-            
-        try:
-            from vertexai.vision_models import ImageGenerationModel
-            import vertexai
-            vertexai.init(project="careful-ensign-477104-p5", location="us-central1")
-            model = ImageGenerationModel.from_pretrained("imagen-3.0-fast-generate-001")
-            res_vertex = model.generate_images(prompt=safe_prompt, number_of_images=1, aspect_ratio="1:1")
-            return res_vertex.images[0]._image_bytes
-        except Exception as ex_vertex:
-            st.error("Semua jalur Google AI (AI Studio & Vertex) buntu.")
-            return None
+        from vertexai.vision_models import ImageGenerationModel
+        import vertexai
+        vertexai.init(project="careful-ensign-477104-p5", location="us-central1")
+        model = ImageGenerationModel.from_pretrained("imagen-3.0-fast-generate-001")
+        res = model.generate_images(prompt=f"dynamic colorful social media ad, {prompt_text}", number_of_images=1, aspect_ratio="1:1")
+        return res.images[0]._image_bytes
     except Exception as e:
-        st.error(f"Gagal total generate Nano Banana 2: {e}")
+        st.error(f"Gemini Flash/Imagen Fast Gagal: {e}")
         return None
 
 # ==============================================================================
@@ -276,6 +241,8 @@ def apply_dynamic_branding(main_bytes, logo_file, posisi):
 # ==============================================================================
 # UI STREAMLIT
 # ==============================================================================
+st.markdown('<div class="main-header"><h1>📈 Inamikro Ad Generator</h1><p>Platform Konten Iklan UMKM Berbasis Agentic AI</p></div>', unsafe_allow_html=True)
+
 col_b1, col_b2 = st.columns([3, 1])
 with col_b1:
     mp_status = "✅ Master Prompt V1.0 Aktif" if MASTER_PROMPT_PATH.exists() else "⚠️ Master Prompt fallback"
@@ -301,7 +268,7 @@ with col_f:
         keywords_raw = st.text_input("Keywords USP", placeholder="keju creamy, halal, harga terjangkau")
         keywords = [k.strip() for k in keywords_raw.split(",") if k.strip()]
         
-        # --- UI TAGS USP HIGHLIGHT ---
+        # --- UI TAGS KEMBALI! ---
         if keywords: st.markdown(" ".join([f'<span class="kw-tag">{k}</span>' for k in keywords]), unsafe_allow_html=True)
         
         kategori = st.selectbox("Kategori Usaha", list(KBLI_DATA.keys()))
@@ -369,23 +336,23 @@ with col_r:
                 st.download_button("⬇️ Download Imagen", data=st.session_state.img_mem["A"], file_name="imagen.png", mime="image/png", use_container_width=True)
 
         with t_dalle:
-            st.markdown('<div class="cost-badge">Estimasi Biaya API: ~$0.05 / Rp 800</div>', unsafe_allow_html=True)
-            if st.button("Render GPT/DALL-E", key="btn_b", use_container_width=True):
-                with st.spinner("Merender via OpenAI (GPT-Image-2/DALL-E-2)..."):
+            st.markdown('<div class="cost-badge">Estimasi Biaya API: ~$0.04 / Rp 640</div>', unsafe_allow_html=True)
+            if st.button("Render GPT Image", key="btn_b", use_container_width=True):
+                with st.spinner("Merender via OpenAI..."):
                     raw = generate_dalle_image(vis_edit)
                     st.session_state.img_mem["B"] = apply_dynamic_branding(raw, logo_file, posisi_logo) if raw else None
             if st.session_state.img_mem["B"]:
-                st.image(st.session_state.img_mem["B"], caption="GPT Image / DALL-E")
+                st.image(st.session_state.img_mem["B"], caption="GPT Image")
                 st.download_button("⬇️ Download GPT", data=st.session_state.img_mem["B"], file_name="gpt.png", mime="image/png", use_container_width=True)
 
         with t_gmn:
             st.markdown('<div class="cost-badge">Estimasi Biaya API: Termasuk Kuota Gemini / Gratis</div>', unsafe_allow_html=True)
-            if st.button("Render Nano Banana 2", key="btn_c", use_container_width=True):
-                with st.spinner("Merender Gambar..."):
+            if st.button("Render Gemini Flash", key="btn_c", use_container_width=True):
+                with st.spinner("Merender Gambar Cepat..."):
                     raw = generate_gemini_flash_image(vis_edit)
                     st.session_state.img_mem["C"] = apply_dynamic_branding(raw, logo_file, posisi_logo) if raw else None
             if st.session_state.img_mem["C"]:
-                st.image(st.session_state.img_mem["C"], caption="Gemini Nano Banana 2 / Fast Generate")
+                st.image(st.session_state.img_mem["C"], caption="Gemini Fast Generate")
                 st.download_button("⬇️ Download Gemini", data=st.session_state.img_mem["C"], file_name="gemini.png", mime="image/png", use_container_width=True)
     else:
         st.info("👈 Silakan isi data di sebelah kiri lalu tekan Generate.")
