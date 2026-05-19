@@ -9,17 +9,17 @@ import streamlit as st
 # ==============================================================================
 # CSS FIX UNTUK DARK MODE STREAMLIT (TEKS MENGHILANG)
 # ==============================================================================
-st.markdown("""
-    <style>
-    /* Memaksa semua teks di dalam kotak Info (Biru), Success (Hijau), dan Warning/Error menjadi Hitam */
-    div[data-testid="stAlert"] p, 
-    div[data-testid="stAlert"] span, 
-    div[data-testid="stAlert"] div {
-        color: #000000 !important;
-        font-weight: 500 !important;
-    }
-    </style>
-""", unsafe_allow_html=True)
+# st.markdown("""
+#     <style>
+#     /* Memaksa semua teks di dalam kotak Info (Biru), Success (Hijau), dan Warning/Error menjadi Hitam */
+#     div[data-testid="stAlert"] p, 
+#     div[data-testid="stAlert"] span, 
+#     div[data-testid="stAlert"] div {
+#         color: #000000 !important;
+#         font-weight: 500 !important;
+#     }
+#     </style>
+# """, unsafe_allow_html=True)
 
 import re
 import io
@@ -40,9 +40,13 @@ st.markdown("""
     .main-header { text-align: center; padding: 0.8rem 0 0.3rem 0; }
     .main-header h1 { color: #1565C0; font-size: 2rem; margin-bottom: 0.1rem; }
     .step-label { font-weight: 700; font-size: 1rem; color: #1565C0; margin: 0.8rem 0 0.3rem 0; }
+    
+    /* FIX WARNA TEKS DI SINI: Ditambah color hitam pekat agar tembus Dark Mode */
     .kbli-desc, .elemen-box, .photo-caption-box {
         border-radius: 4px; padding: 0.4rem 0.7rem; font-size: 0.81rem; margin-top: 0.3rem;
+        color: #000000 !important; 
     }
+    
     .kbli-desc { background: #f0f4ff; border-left: 3px solid #1565C0; }
     .elemen-box { background: #f7fff7; border-left: 3px solid #2e7d32; }
     .photo-caption-box { background: #fff3e0; border-left: 3px solid #fb8c00; margin-bottom: 0.5rem;}
