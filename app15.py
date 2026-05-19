@@ -5,6 +5,19 @@ import streamlit as st
 #     st.sidebar.error("Secrets BELUM TERBACA! Cek spelling di Dashboard.")
 # else:
 #     st.sidebar.success("Secrets Terbaca! Siap Render.")
+
+#CSS FIX UNTUK DARK MODE
+st.markdown("""
+    <style>
+    /* Mengubah warna teks di dalam box error agar selalu terbaca */
+    div[data-testid="stAlert"] {
+        background-color: #3d2b2b !important; /* Warna background gelap biar gak silau */
+        color: #ffcccc !important;            /* Warna teks jadi merah muda terang biar kebaca */
+        border: 1px solid #ff4b4b !important; /* Border merah biar tetap kelihatan itu error */
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 import re
 import io
 import base64
