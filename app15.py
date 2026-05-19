@@ -1,10 +1,10 @@
 import os
 import streamlit as st
-# DEBUGGING: Cek apakah secrets terbaca
-if "GCP_SERVICE_ACCOUNT" not in st.secrets:
-    st.sidebar.error("Secrets BELUM TERBACA! Cek spelling di Dashboard.")
-else:
-    st.sidebar.success("Secrets Terbaca! Siap Render.")
+# # DEBUGGING: Cek apakah secrets terbaca
+# if "GCP_SERVICE_ACCOUNT" not in st.secrets:
+#     st.sidebar.error("Secrets BELUM TERBACA! Cek spelling di Dashboard.")
+# else:
+#     st.sidebar.success("Secrets Terbaca! Siap Render.")
 import re
 import io
 import base64
