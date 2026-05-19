@@ -177,34 +177,35 @@ def evaluate_ad_quality(nama_produk, platform, generated_ad):
 @st.cache_data(show_spinner=False)
 def generate_imagen_image(prompt_text):
     if not prompt_text: return None
-    full_prompt = (
-        f"professional product photography, {prompt_text}, "
-        "photorealistic, highly detailed, 8k resolution, "
-        "commercial advertisement style, no text overlay, "
-        "sharp focus, beautiful cinematic lighting."
-    )
     try:
         from vertexai.vision_models import ImageGenerationModel
         import vertexai
+        from google.oauth2.service_account import Credentials
         
-        # Penanganan aman agar tidak timeout 120s jika rahasia belum diset
-        try:
-            from google.oauth2.service_account import Credentials
-            if "GCP_SERVICE_ACCOUNT" in st.secrets:
-                creds = Credentials.from_service_account_info(st.secrets["GCP_SERVICE_ACCOUNT"])
-                vertexai.init(project="careful-ensign-477104-p5", location="us-central1", credentials=creds)
-            else:
-                vertexai.init(project="careful-ensign-477104-p5", location="us-central1")
-        except Exception:
-            vertexai.init(project="careful-ensign-477104-p5", location="us-central1")
+        # 1. CEK SECRETS
+        if "GCP_SERVICE_ACCOUNT" not in st.secrets:
+            st.error("❌ GCP_SERVICE_ACCOUNT belum ada di Streamlit Secrets!")
+            return None
+            
+        # 2. PAKSA AUTENTIKASI DARI JSON (BUKAN DARI CLOUD METADATA)
+        # Kita buat dict dari secrets, lalu masukkan ke Credentials
+        creds_dict = dict(st.secrets["GCP_SERVICE_ACCOUNT"])
+        creds = Credentials.from_service_account_info(creds_dict)
+        
+        # 3. INISIALISASI DENGAN KREDENSIAL YANG SUDAH JELAS
+        vertexai.init(project="careful-ensign-477104-p5", location="us-central1", credentials=creds)
 
-        model = ImageGenerationModel.from_pretrained("imagen-3.0-generate-001")
-        response = model.generate_images(prompt=full_prompt, number_of_images=1, aspect_ratio="1:1")
+        model = ImageGenerationModel.from_pretrained("imagen-3.0-generate-002")
+        response = model.generate_images(
+            prompt=f"professional product photography, {prompt_text}, highly detailed, 8k, sharp focus", 
+            number_of_images=1, 
+            aspect_ratio="1:1"
+        )
         return response.images[0]._image_bytes
     except Exception as e:
-        st.error(f"Gagal generate gambar Imagen. Pesan: {e}")
+        # Jika masih error, tampilkan detailnya agar kita tahu persis letak salahnya
+        st.error(f"Gagal generate Imagen. Pesan: {str(e)}")
         return None
-
 @st.cache_data(show_spinner=False)
 def generate_dalle_image(prompt_text):
     if not prompt_text: return None
