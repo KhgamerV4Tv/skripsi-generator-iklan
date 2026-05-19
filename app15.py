@@ -1,5 +1,10 @@
 import os
 import streamlit as st
+# DEBUGGING: Cek apakah secrets terbaca
+if "GCP_SERVICE_ACCOUNT" not in st.secrets:
+    st.sidebar.error("Secrets BELUM TERBACA! Cek spelling di Dashboard.")
+else:
+    st.sidebar.success("Secrets Terbaca! Siap Render.")
 import re
 import io
 import base64
@@ -182,29 +187,23 @@ def generate_imagen_image(prompt_text):
         import vertexai
         from google.oauth2.service_account import Credentials
         
-        # 1. CEK SECRETS
+        # CEK APAKAH SECRETS TERBACA
         if "GCP_SERVICE_ACCOUNT" not in st.secrets:
-            st.error("❌ GCP_SERVICE_ACCOUNT belum ada di Streamlit Secrets!")
+            st.error("Secrets GCP_SERVICE_ACCOUNT tidak terdeteksi oleh aplikasi!")
             return None
             
-        # 2. PAKSA AUTENTIKASI DARI JSON (BUKAN DARI CLOUD METADATA)
-        # Kita buat dict dari secrets, lalu masukkan ke Credentials
-        creds_dict = dict(st.secrets["GCP_SERVICE_ACCOUNT"])
-        creds = Credentials.from_service_account_info(creds_dict)
+        # KONVERSI SECRETS KE FORMAT GOOGLE CREDENTIALS
+        secrets_dict = dict(st.secrets["GCP_SERVICE_ACCOUNT"])
+        creds = Credentials.from_service_account_info(secrets_dict)
         
-        # 3. INISIALISASI DENGAN KREDENSIAL YANG SUDAH JELAS
+        # INISIALISASI
         vertexai.init(project="careful-ensign-477104-p5", location="us-central1", credentials=creds)
 
         model = ImageGenerationModel.from_pretrained("imagen-3.0-generate-002")
-        response = model.generate_images(
-            prompt=f"professional product photography, {prompt_text}, highly detailed, 8k, sharp focus", 
-            number_of_images=1, 
-            aspect_ratio="1:1"
-        )
+        response = model.generate_images(prompt=f"professional product photography, {prompt_text}", number_of_images=1, aspect_ratio="1:1")
         return response.images[0]._image_bytes
     except Exception as e:
-        # Jika masih error, tampilkan detailnya agar kita tahu persis letak salahnya
-        st.error(f"Gagal generate Imagen. Pesan: {str(e)}")
+        st.error(f"Imagen Error: {e}")
         return None
 @st.cache_data(show_spinner=False)
 def generate_dalle_image(prompt_text):
