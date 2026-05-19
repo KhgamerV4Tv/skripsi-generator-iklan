@@ -6,14 +6,17 @@ import streamlit as st
 # else:
 #     st.sidebar.success("Secrets Terbaca! Siap Render.")
 
-#CSS FIX UNTUK DARK MODE
+# ==============================================================================
+# CSS FIX UNTUK DARK MODE STREAMLIT (TEKS MENGHILANG)
+# ==============================================================================
 st.markdown("""
     <style>
-    /* Mengubah warna teks di dalam box error agar selalu terbaca */
-    div[data-testid="stAlert"] {
-        background-color: #3d2b2b !important; /* Warna background gelap biar gak silau */
-        color: #ffcccc !important;            /* Warna teks jadi merah muda terang biar kebaca */
-        border: 1px solid #ff4b4b !important; /* Border merah biar tetap kelihatan itu error */
+    /* Memaksa semua teks di dalam kotak Info (Biru), Success (Hijau), dan Warning/Error menjadi Hitam */
+    div[data-testid="stAlert"] p, 
+    div[data-testid="stAlert"] span, 
+    div[data-testid="stAlert"] div {
+        color: #000000 !important;
+        font-weight: 500 !important;
     }
     </style>
 """, unsafe_allow_html=True)
