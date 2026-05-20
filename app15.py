@@ -1,59 +1,129 @@
 import os
 import streamlit as st
-# # DEBUGGING: Cek apakah secrets terbaca
-# if "GCP_SERVICE_ACCOUNT" not in st.secrets:
-#     st.sidebar.error("Secrets BELUM TERBACA! Cek spelling di Dashboard.")
-# else:
-#     st.sidebar.success("Secrets Terbaca! Siap Render.")
-
-# ==============================================================================
-# CSS FIX UNTUK DARK MODE STREAMLIT (TEKS MENGHILANG)
-# ==============================================================================
-# st.markdown("""
-#     <style>
-#     /* Memaksa semua teks di dalam kotak Info (Biru), Success (Hijau), dan Warning/Error menjadi Hitam */
-#     div[data-testid="stAlert"] p, 
-#     div[data-testid="stAlert"] span, 
-#     div[data-testid="stAlert"] div {
-#         color: #000000 !important;
-#         font-weight: 500 !important;
-#     }
-#     </style>
-# """, unsafe_allow_html=True)
-
 import re
 import io
 import base64
 import requests
 import openai
+import pandas as pd # Ditambahkan untuk manajemen data form
+from datetime import datetime
 from pathlib import Path
 from PIL import Image, ImageEnhance, ImageDraw, ImageFont
 import google.generativeai as genai
 
 # ==============================================================================
-# KONFIGURASI HALAMAN & CSS RESMI INAMIKRO
+# KONFIGURASI HALAMAN & CSS RESMI INAMIKRO (ELEGAN & MODERN)
 # ==============================================================================
 st.set_page_config(page_title="Inamikro Ad Generator V18 Final", layout="wide", page_icon="📈")
 
+# Kustomisasi CSS untuk mempercantik UI agar tidak terlihat "biasa"
 st.markdown("""
 <style>
-    .main-header { text-align: center; padding: 0.8rem 0 0.3rem 0; }
-    .main-header h1 { color: #1565C0; font-size: 2rem; margin-bottom: 0.1rem; }
-    .step-label { font-weight: 700; font-size: 1rem; color: #1565C0; margin: 0.8rem 0 0.3rem 0; }
-    
-    /* FIX WARNA TEKS DI SINI: Ditambah color hitam pekat agar tembus Dark Mode */
-    .kbli-desc, .elemen-box, .photo-caption-box {
-        border-radius: 4px; padding: 0.4rem 0.7rem; font-size: 0.81rem; margin-top: 0.3rem;
-        color: #000000 !important; 
+    /* Mengubah font dasar dan background kontainer utama */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    html, body, [data-testid="stAppViewContainer"] {
+        font-family: 'Inter', sans-serif;
     }
     
-    .kbli-desc { background: #f0f4ff; border-left: 3px solid #1565C0; }
-    .elemen-box { background: #f7fff7; border-left: 3px solid #2e7d32; }
-    .photo-caption-box { background: #fff3e0; border-left: 3px solid #fb8c00; margin-bottom: 0.5rem;}
-    .kw-tag { background:#e3f2fd; border-radius:12px; padding:4px 12px; font-size:0.85rem; color:#1565C0; margin:4px 4px 10px 0; display:inline-block; font-weight: 500; border: 1px solid #bbdefb;}
-    .cost-badge { background:#ffebee; border-radius:4px; padding:0.2rem 0.5rem; font-size:0.75rem; color:#c62828; display:inline-block; font-weight:bold; margin-bottom: 0.5rem;}
-    .master-prompt-badge { background:#ede7f6; border-radius:4px; padding:0.3rem 0.6rem; font-size:0.78rem; color:#4527a0; display:inline-block; margin-bottom:0.5rem; }
+    /* Desain Header Utama ala Dashboard Profesional */
+    .main-header { 
+        background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+        padding: 2rem;
+        border-radius: 12px;
+        text-align: center;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    .main-header h1 { 
+        color: #ffffff !important; 
+        font-size: 2.2rem; 
+        font-weight: 700;
+        margin: 0;
+    }
+    .main-header p {
+        color: #e2e8f0;
+        margin-top: 0.5rem;
+        font-size: 1rem;
+    }
+    
+    /* Styling Label Langkah/Section */
+    .step-label { 
+        font-weight: 700; 
+        font-size: 1.15rem; 
+        color: #1e40af; 
+        margin: 1.5rem 0 0.8rem 0;
+        padding-bottom: 0.3rem;
+        border-bottom: 2px solid #e2e8f0;
+    }
+    
+    /* Card Container Borderless & Shadow-based */
+    div[data-testid="stVerticalBlockBorderWithFormatting"] {
+        background-color: transparent;
+        border: 1px solid #e2e8f0 !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        border-radius: 12px !important;
+        padding: 1.5rem !important;
+    }
+    
+    /* Fix Teks Kontainer Info agar Terbaca di Dark & Light Mode */
+    .kbli-desc, .elemen-box, .photo-caption-box {
+        border-radius: 8px; 
+        padding: 0.75rem 1rem; 
+        font-size: 0.85rem; 
+        margin-top: 0.6rem;
+        color: #1e293b !important; 
+        line-height: 1.5;
+    }
+    
+    .kbli-desc { background: #eff6ff; border-left: 4px solid #3b82f6; }
+    .elemen-box { background: #f0fdf4; border-left: 4px solid #22c55e; }
+    .photo-caption-box { background: #fff7ed; border-left: 4px solid #f97316; margin-bottom: 0.8rem;}
+    
+    /* Badge Tag USP */
+    .kw-tag { 
+        background: #e0f2fe; 
+        border-radius: 20px; 
+        padding: 6px 14px; 
+        font-size: 0.8rem; 
+        color: #0369a1; 
+        margin: 4px 4px 10px 0; 
+        display: inline-block; 
+        font-weight: 600; 
+        border: 1px solid #bae6fd;
+    }
+    
+    /* Estimasi Biaya Badge */
+    .cost-badge { 
+        background: #fee2e2; 
+        border-radius: 6px; 
+        padding: 0.4rem 0.8rem; 
+        font-size: 0.8rem; 
+        color: #991b1b; 
+        display: inline-block; 
+        font-weight: 600; 
+        margin-bottom: 0.8rem;
+        border: 1px solid #fca5a5;
+    }
+    
+    .master-prompt-badge { 
+        background: #f3e8ff; 
+        border-radius: 6px; 
+        padding: 0.4rem 0.8rem; 
+        font-size: 0.8rem; 
+        color: #6b21a8; 
+        display: inline-block; 
+        margin-bottom: 1rem;
+        border: 1px solid #e9d5ff;
+    }
 </style>
+""", unsafe_allow_html=True)
+
+# Render Header Baru
+st.markdown("""
+<div class="main-header">
+    <h1>📈 Inamikro Ad Generator V18 Pro</h1>
+    <p>Platform Generator Copywriting & Komparasi Engine Visual Skripsi UMKM</p>
+</div>
 """, unsafe_allow_html=True)
 
 # ==============================================================================
@@ -100,7 +170,13 @@ BACKGROUND_OPTIONS = {
 }
 
 # ==============================================================================
-# ENGINE GENERATOR TEKS MURNI GOOGLE GEMINI SDK (ANTI-ERROR 503 METADATA)
+# INI-STATE DATA FORM MOKAP GOOGLE FORM (SKRIPSI TRACKING)
+# ==============================================================================
+if "skripsi_data" not in st.session_state:
+    st.session_state.skripsi_data = []
+
+# ==============================================================================
+# ENGINE GENERATOR TEKS MURNI GOOGLE GEMINI SDK
 # ==============================================================================
 class GeminiStudioWrapper:
     def __init__(self, model_name, temperature):
@@ -197,7 +273,7 @@ def evaluate_ad_quality(nama_produk, platform, generated_ad):
     return llm_evaluator.invoke([DummyMsg(prompt)]).content
 
 # ==============================================================================
-# TIGA MODEL GENERATOR VISUAL UNTUK BAB 4 KOMPARASI SKRIPSI (ASLI 100%)
+# MODEL GENERATOR VISUAL
 # ==============================================================================
 @st.cache_data(show_spinner=False)
 def generate_imagen_image(prompt_text):
@@ -206,39 +282,27 @@ def generate_imagen_image(prompt_text):
         from vertexai.vision_models import ImageGenerationModel
         import vertexai
         from google.oauth2.service_account import Credentials
-        
-        # CEK APAKAH SECRETS TERBACA
         if "GCP_SERVICE_ACCOUNT" not in st.secrets:
             st.error("Secrets GCP_SERVICE_ACCOUNT tidak terdeteksi oleh aplikasi!")
             return None
-            
-        # KONVERSI SECRETS KE FORMAT GOOGLE CREDENTIALS
         secrets_dict = dict(st.secrets["GCP_SERVICE_ACCOUNT"])
         creds = Credentials.from_service_account_info(secrets_dict)
-        
-        # INISIALISASI
         vertexai.init(project="careful-ensign-477104-p5", location="us-central1", credentials=creds)
-
         model = ImageGenerationModel.from_pretrained("imagen-3.0-generate-002")
         response = model.generate_images(prompt=f"professional product photography, {prompt_text}", number_of_images=1, aspect_ratio="1:1")
         return response.images[0]._image_bytes
     except Exception as e:
         st.error(f"Imagen Error: {e}")
         return None
+
 @st.cache_data(show_spinner=False)
 def generate_dalle_image(prompt_text):
     if not prompt_text: return None
     try:
         client = openai.OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
         safe_prompt = prompt_text[:900] 
-        
-        # MURNI HANYA MEMANGGIL gpt-image-2 SESUAI INSTRUKSI KEVIN
         res = client.images.generate(model="gpt-image-2", prompt=safe_prompt, size="1024x1024", n=1)
-        if res.data[0].url: 
-            return requests.get(res.data[0].url).content
-        if hasattr(res.data[0], 'b64_json') and res.data[0].b64_json: 
-            return base64.b64decode(res.data[0].b64_json)
-            
+        if res.data[0].url: return requests.get(res.data[0].url).content
     except Exception as e:
         st.error(f"Gagal total menghubungi OpenAI (gpt-image-2): {e}")
         return None
@@ -248,40 +312,25 @@ def generate_gemini_flash_image(prompt_text):
     if not prompt_text: return None
     safe_prompt = prompt_text[:900]
     try:
-        # Skenario Utama: Nano Banana 2
         genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
         model = genai.GenerativeModel('models/nano-banana-2')
         res = model.generate_content(safe_prompt)
         for cand in res.candidates:
             for part in cand.content.parts:
-                if hasattr(part, 'inline_data') and part.inline_data:
-                    return part.inline_data.data
-    except Exception as e:
-        print(f"Nano Banana 2 AI Studio gagal, pindah ke Vertex AI... Error: {e}")
-        
-        # Skenario Fallback: Imagen Fast Generate 001
+                if hasattr(part, 'inline_data') and part.inline_data: return part.inline_data.data
+    except Exception:
         try:
             from vertexai.vision_models import ImageGenerationModel
             import vertexai
-            try:
-                from google.oauth2.service_account import Credentials
-                if "GCP_SERVICE_ACCOUNT" in st.secrets:
-                    creds = Credentials.from_service_account_info(st.secrets["GCP_SERVICE_ACCOUNT"])
-                    vertexai.init(project="careful-ensign-477104-p5", location="us-central1", credentials=creds)
-                else:
-                    vertexai.init(project="careful-ensign-477104-p5", location="us-central1")
-            except Exception:
-                vertexai.init(project="careful-ensign-477104-p5", location="us-central1")
-
+            vertexai.init(project="careful-ensign-477104-p5", location="us-central1")
             model = ImageGenerationModel.from_pretrained("imagen-3.0-fast-generate-001")
             res_vertex = model.generate_images(prompt=safe_prompt, number_of_images=1, aspect_ratio="1:1")
             return res_vertex.images[0]._image_bytes
-        except Exception as ex:
-            st.error("Semua jalur Google AI (AI Studio & Vertex) buntu.")
+        except Exception:
             return None
 
 # ==============================================================================
-# POST-PROCESSING (LOGO & WATERMARK UMKM)
+# POST-PROCESSING
 # ==============================================================================
 def apply_dynamic_branding(main_bytes, logo_file, posisi):
     if not main_bytes or not logo_file: return main_bytes
@@ -306,20 +355,19 @@ def apply_dynamic_branding(main_bytes, logo_file, posisi):
     except Exception: return main_bytes
 
 # ==============================================================================
-# USER INTERFACE STREAMLIT UTAMA (DILENGKAPI INDIKATOR BIAYA)
+# USER INTERFACE LAYOUT (KOLOM KIRI & KANAN)
 # ==============================================================================
-col_b1, col_b2 = st.columns([3, 1])
-with col_b1:
-    mp_status = "✅ Master Prompt V1.0 Aktif" if MASTER_PROMPT_PATH.exists() else "⚠️ Master Prompt fallback"
-    st.markdown(f'<div class="master-prompt-badge">🧠 {mp_status} | <code>master_prompt_inamikro.md</code></div>', unsafe_allow_html=True)
-
 for k in ['main_txt', 'vis_prompt', 'ai_review', 'last_p', 'img_mem']:
     if k not in st.session_state: st.session_state[k] = None
 if st.session_state.img_mem is None: st.session_state.img_mem = {"A": None, "B": None, "C": None}
 
-col_f, col_r = st.columns([1, 1.45], gap="large")
+col_f, col_r = st.columns([1, 1.35], gap="large")
 
+# --- KOLOM KIRI: INPUT DATA ---
 with col_f:
+    mp_status = "✅ Master Prompt V1.0 Aktif" if MASTER_PROMPT_PATH.exists() else "⚠️ Master Prompt fallback"
+    st.markdown(f'<div class="master-prompt-badge">🧠 {mp_status}</div>', unsafe_allow_html=True)
+
     st.markdown('<div class="step-label">📋 Langkah 1: Identitas & Branding UMKM</div>', unsafe_allow_html=True)
     with st.container(border=True):
         col_l1, col_l2 = st.columns([1.3, 1])
@@ -333,7 +381,6 @@ with col_f:
         keywords_raw = st.text_input("Keywords USP", placeholder="keju creamy, halal, harga terjangkau")
         keywords = [k.strip() for k in keywords_raw.split(",") if k.strip()]
         
-        # --- UI TAGS USP HIGHLIGHT ---
         if keywords: st.markdown(" ".join([f'<span class="kw-tag">{k}</span>' for k in keywords]), unsafe_allow_html=True)
         
         kategori = st.selectbox("Kategori Usaha", list(KBLI_DATA.keys()))
@@ -347,7 +394,7 @@ with col_f:
             for i, f in enumerate(foto_produk[:3]):
                 c1, c2 = st.columns([1, 2.5])
                 with c1: st.image(f, use_container_width=True)
-                with c2: foto_desc.append(st.text_input(f"Desc Foto {i+1}", key=f"f_{i}", label_visibility="collapsed", placeholder="Contoh: Plastik hijau"))
+                with c2: foto_desc.append(st.text_input(f"Desc Foto {i+1}", key=f"f_{i}", label_visibility="collapsed", placeholder="Contoh: Kemasan plastik"))
 
     st.markdown('<div class="step-label">🎯 Langkah 3: Strategi Platform</div>', unsafe_allow_html=True)
     with st.container(border=True):
@@ -370,6 +417,7 @@ with col_f:
                 st.session_state.main_txt, st.session_state.vis_prompt = txt, vis
                 st.session_state.last_p = {"nama": nama_produk, "plat": platform}
 
+# --- KOLOM KANAN: OUTPUT & FORM MOKAP GFORM ---
 with col_r:
     st.markdown('<div class="step-label">📱 Langkah 4: Copywriting & Evaluasi</div>', unsafe_allow_html=True)
     if st.session_state.main_txt:
@@ -398,26 +446,68 @@ with col_r:
                     st.session_state.img_mem["A"] = apply_dynamic_branding(raw, logo_file, posisi_logo) if raw else None
             if st.session_state.img_mem["A"]:
                 st.image(st.session_state.img_mem["A"], caption="Model A: Imagen 3.0")
-                st.download_button("⬇️ Download Imagen", data=st.session_state.img_mem["A"], file_name="imagen_inamikro.png", mime="image/png", use_container_width=True)
 
         with t_dalle:
             st.markdown('<div class="cost-badge">Estimasi Biaya API: ~$0.05 / Rp 800</div>', unsafe_allow_html=True)
             if st.button("Render GPT/DALL-E", key="btn_b", use_container_width=True):
-                with st.spinner("Merender via OpenAI (GPT-Image-2/DALL-E-2)..."):
+                with st.spinner("Merender via OpenAI (GPT-Image-2)..."):
                     raw = generate_dalle_image(vis_edit)
                     st.session_state.img_mem["B"] = apply_dynamic_branding(raw, logo_file, posisi_logo) if raw else None
             if st.session_state.img_mem["B"]:
-                st.image(st.session_state.img_mem["B"], caption="Model B: GPT Image / DALL-E")
-                st.download_button("⬇️ Download GPT", data=st.session_state.img_mem["B"], file_name="gpt_inamikro.png", mime="image/png", use_container_width=True)
+                st.image(st.session_state.img_mem["B"], caption="Model B: GPT Image")
 
         with t_gmn:
-            st.markdown('<div class="cost-badge">Estimasi Biaya API: Termasuk Kuota Gemini / Gratis</div>', unsafe_allow_html=True)
+            st.markdown('<div class="cost-badge">Estimasi Biaya API: Gratis</div>', unsafe_allow_html=True)
             if st.button("Render Nano Banana 2", key="btn_c", use_container_width=True):
                 with st.spinner("Merender Gambar..."):
                     raw = generate_gemini_flash_image(vis_edit)
                     st.session_state.img_mem["C"] = apply_dynamic_branding(raw, logo_file, posisi_logo) if raw else None
             if st.session_state.img_mem["C"]:
-                st.image(st.session_state.img_mem["C"], caption="Model C: Gemini Nano Banana 2 / Fast Generate")
-                st.download_button("⬇️ Download Gemini", data=st.session_state.img_mem["C"], file_name="gemini_inamikro.png", mime="image/png", use_container_width=True)
+                st.image(st.session_state.img_mem["C"], caption="Model C: Gemini Nano Banana")
+
+        # ==============================================================================
+        # 📊 BARU: FITUR FORM INPUT MOKAP GOOGLE FORM (REVISI DOSEN 2)
+# ==============================================================================
+        st.divider()
+        st.markdown('<div class="step-label">📊 Form Pendataan Hasil Evaluasi (Per Bidang)</div>', unsafe_allow_html=True)
+        st.caption("Gunakan form di bawah ini untuk menyimpan log pengujian skripsi berdasarkan bidang.")
+        
+        with st.form("gform_mokap", clear_on_submit=True):
+            f_bidang = st.selectbox("Pilih Bidang Hasil Pengujian", ["Bidang Food & Beverages", "Bidang Fashion/Pakaian", "Bidang Jasa & Retail"])
+            f_tester = st.text_input("Nama Penilai / Tester", value="Dosen Pembimbing 2")
+            f_catatan = st.text_area("Catatan atau Evaluasi Kualitatif Kinerja Model")
+            f_skor = st.slider("Skor Kelayakan Hasil (1 - 100)", 1, 100, 85)
+            
+            submit_form = st.form_submit_button("📁 Simpan Data ke dalam Log Skripsi", use_container_width=True)
+            
+            if submit_form:
+                new_entry = {
+                    "Waktu": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "Bidang": f_bidang,
+                    "Nama Produk": nama_produk,
+                    "Platform Target": platform,
+                    "Tester": f_tester,
+                    "Catatan Evaluasi": f_catatan,
+                    "Skor Kelayakan": f_skor
+                }
+                st.session_state.skripsi_data.append(new_entry)
+                st.toast("Data evaluasi berhasil direkam!", icon="💾")
+
+        # Tampilkan tabel riwayat data jika sudah terisi
+        if st.session_state.skripsi_data:
+            st.markdown("### 📋 Riwayat Log Data Terkumpul (Google Form Mockup)")
+            df_log = pd.DataFrame(st.session_state.skripsi_data)
+            st.dataframe(df_log, use_container_width=True)
+            
+            # Button untuk Export data jadi CSV untuk lampiran Bab 4
+            csv_data = df_log.to_csv(index=False).encode('utf-8')
+            st.download_button(
+                label="📥 Download Data Log Pengujian (.CSV)",
+                data=csv_data,
+                file_name="log_pengujian_skripsi_inamikro.csv",
+                mime="text/csv",
+                use_container_width=True
+            )
+
     else:
-        st.info("👈 Silakan isi data di sebelah kiri lalu tekan Generate.")
+        st.info("👈 Silakan isi data di sebelah kiri lalu tekan Generate untuk memulai.")

@@ -1,5 +1,26 @@
 import os
 import streamlit as st
+# # DEBUGGING: Cek apakah secrets terbaca
+# if "GCP_SERVICE_ACCOUNT" not in st.secrets:
+#     st.sidebar.error("Secrets BELUM TERBACA! Cek spelling di Dashboard.")
+# else:
+#     st.sidebar.success("Secrets Terbaca! Siap Render.")
+
+# ==============================================================================
+# CSS FIX UNTUK DARK MODE STREAMLIT (TEKS MENGHILANG)
+# ==============================================================================
+# st.markdown("""
+#     <style>
+#     /* Memaksa semua teks di dalam kotak Info (Biru), Success (Hijau), dan Warning/Error menjadi Hitam */
+#     div[data-testid="stAlert"] p, 
+#     div[data-testid="stAlert"] span, 
+#     div[data-testid="stAlert"] div {
+#         color: #000000 !important;
+#         font-weight: 500 !important;
+#     }
+#     </style>
+# """, unsafe_allow_html=True)
+
 import re
 import io
 import base64
@@ -10,18 +31,22 @@ from PIL import Image, ImageEnhance, ImageDraw, ImageFont
 import google.generativeai as genai
 
 # ==============================================================================
-# KONFIGURASI HALAMAN & CSS
+# KONFIGURASI HALAMAN & CSS RESMI INAMIKRO
 # ==============================================================================
-st.set_page_config(page_title="Inamikro Ad Generator V16 Final", layout="wide", page_icon="📈")
+st.set_page_config(page_title="Inamikro Ad Generator V18 Final", layout="wide", page_icon="📈")
 
 st.markdown("""
 <style>
     .main-header { text-align: center; padding: 0.8rem 0 0.3rem 0; }
     .main-header h1 { color: #1565C0; font-size: 2rem; margin-bottom: 0.1rem; }
     .step-label { font-weight: 700; font-size: 1rem; color: #1565C0; margin: 0.8rem 0 0.3rem 0; }
+    
+    /* FIX WARNA TEKS DI SINI: Ditambah color hitam pekat agar tembus Dark Mode */
     .kbli-desc, .elemen-box, .photo-caption-box {
         border-radius: 4px; padding: 0.4rem 0.7rem; font-size: 0.81rem; margin-top: 0.3rem;
+        color: #000000 !important; 
     }
+    
     .kbli-desc { background: #f0f4ff; border-left: 3px solid #1565C0; }
     .elemen-box { background: #f7fff7; border-left: 3px solid #2e7d32; }
     .photo-caption-box { background: #fff3e0; border-left: 3px solid #fb8c00; margin-bottom: 0.5rem;}
@@ -32,7 +57,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==============================================================================
-# DATA MASTER PROMPT & KBLI
+# DATA MASTER PROMPT & DATA KBLI UMKM
 # ==============================================================================
 MASTER_PROMPT_PATH = Path(__file__).parent / "master_prompt_inamikro.md"
 
@@ -41,7 +66,7 @@ def load_master_prompt():
     try:
         if MASTER_PROMPT_PATH.exists(): return MASTER_PROMPT_PATH.read_text(encoding="utf-8")
     except Exception: pass
-    return "Kamu adalah Agen Marketing UMKM."
+    return "Kamu adalah Agen Marketing UMKM Pakar Copywriting Indonesia."
 
 MASTER_PROMPT_FULL = load_master_prompt()
 
@@ -75,7 +100,7 @@ BACKGROUND_OPTIONS = {
 }
 
 # ==============================================================================
-# ENGINE AI TEKS (WRAPPER GOOGLE AI STUDIO - ANTI 503)
+# ENGINE GENERATOR TEKS MURNI GOOGLE GEMINI SDK (ANTI-ERROR 503 METADATA)
 # ==============================================================================
 class GeminiStudioWrapper:
     def __init__(self, model_name, temperature):
@@ -115,7 +140,7 @@ llm_generator = GeminiStudioWrapper(model_name="gemini-2.5-pro", temperature=0.3
 llm_evaluator = GeminiStudioWrapper(model_name="gemini-2.5-pro", temperature=0.1)
 
 # ==============================================================================
-# FUNGSI PARSING & PROMPT BUILDING
+# PARSING & PROMPT BUILDING
 # ==============================================================================
 def parse_output_for_image(markdown_text):
     try:
@@ -172,108 +197,91 @@ def evaluate_ad_quality(nama_produk, platform, generated_ad):
     return llm_evaluator.invoke([DummyMsg(prompt)]).content
 
 # ==============================================================================
-# IMAGE GENERATORS (DENGAN AUTENTIKASI SERVICE ACCOUNT GCP)
+# TIGA MODEL GENERATOR VISUAL UNTUK BAB 4 KOMPARASI SKRIPSI (ASLI 100%)
 # ==============================================================================
-from google.oauth2.service_account import Credentials
-
-def get_gcp_credentials():
-    """Fungsi untuk membaca Service Account JSON dari Streamlit Secrets"""
-    try:
-        if "GCP_SERVICE_ACCOUNT" in st.secrets:
-            return Credentials.from_service_account_info(st.secrets["GCP_SERVICE_ACCOUNT"])
-    except Exception as e:
-        print(f"Error membaca kredensial: {e}")
-    return None
-
 @st.cache_data(show_spinner=False)
 def generate_imagen_image(prompt_text):
     if not prompt_text: return None
-    full_prompt = (
-        f"professional product photography, {prompt_text}, "
-        "photorealistic, highly detailed, 8k resolution, "
-        "commercial advertisement style, no text overlay, "
-        "sharp focus, beautiful cinematic lighting."
-    )
     try:
         from vertexai.vision_models import ImageGenerationModel
         import vertexai
+        from google.oauth2.service_account import Credentials
         
-        creds = get_gcp_credentials()
-        if not creds:
-            st.error("Kredensial GCP (Service Account) belum dipasang di Advanced Settings Streamlit!")
+        # CEK APAKAH SECRETS TERBACA
+        if "GCP_SERVICE_ACCOUNT" not in st.secrets:
+            st.error("Secrets GCP_SERVICE_ACCOUNT tidak terdeteksi oleh aplikasi!")
             return None
             
-        # Inisialisasi dengan kredensial eksplisit agar tidak timeout 120s
+        # KONVERSI SECRETS KE FORMAT GOOGLE CREDENTIALS
+        secrets_dict = dict(st.secrets["GCP_SERVICE_ACCOUNT"])
+        creds = Credentials.from_service_account_info(secrets_dict)
+        
+        # INISIALISASI
         vertexai.init(project="careful-ensign-477104-p5", location="us-central1", credentials=creds)
-        model = ImageGenerationModel.from_pretrained("imagen-3.0-generate-001")
-        response = model.generate_images(prompt=full_prompt, number_of_images=1, aspect_ratio="1:1")
+
+        model = ImageGenerationModel.from_pretrained("imagen-3.0-generate-002")
+        response = model.generate_images(prompt=f"professional product photography, {prompt_text}", number_of_images=1, aspect_ratio="1:1")
         return response.images[0]._image_bytes
     except Exception as e:
-        st.error(f"Gagal generate gambar Imagen 3.0: {e}")
+        st.error(f"Imagen Error: {e}")
         return None
-
 @st.cache_data(show_spinner=False)
 def generate_dalle_image(prompt_text):
     if not prompt_text: return None
     try:
         client = openai.OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
         safe_prompt = prompt_text[:900] 
-        try:
-            # Skenario 1: Model skripsi
-            res = client.images.generate(model="gpt-image-2", prompt=safe_prompt, size="1024x1024", n=1)
-            if res.data[0].url: 
-                return requests.get(res.data[0].url).content
-            if hasattr(res.data[0], 'b64_json') and res.data[0].b64_json: 
-                return base64.b64decode(res.data[0].b64_json)
-        except Exception as e:
-            print(f"gpt-image-2 gagal, masuk fallback dall-e-2... Error: {e}")
         
-        # Skenario Fallback
-        res2 = client.images.generate(model="dall-e-2", prompt=safe_prompt, size="512x512", n=1)
-        if res2.data[0].url: 
-            return requests.get(res2.data[0].url).content
-        return None
+        # MURNI HANYA MEMANGGIL gpt-image-2 SESUAI INSTRUKSI KEVIN
+        res = client.images.generate(model="gpt-image-2", prompt=safe_prompt, size="1024x1024", n=1)
+        if res.data[0].url: 
+            return requests.get(res.data[0].url).content
+        if hasattr(res.data[0], 'b64_json') and res.data[0].b64_json: 
+            return base64.b64decode(res.data[0].b64_json)
+            
     except Exception as e:
-        st.error(f"Gagal total menghubungi OpenAI: {e}")
+        st.error(f"Gagal total menghubungi OpenAI (gpt-image-2): {e}")
         return None
 
 @st.cache_data(show_spinner=False)
 def generate_gemini_flash_image(prompt_text):
     if not prompt_text: return None
+    safe_prompt = prompt_text[:900]
     try:
-        safe_prompt = prompt_text[:900]
-        try:
-            # Skenario 1: Coba Nano Banana 2
-            genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-            model = genai.GenerativeModel('models/nano-banana-2')
-            res = model.generate_content(safe_prompt)
-            for cand in res.candidates:
-                for part in cand.content.parts:
-                    if hasattr(part, 'inline_data') and part.inline_data:
-                        return part.inline_data.data
-        except Exception as e:
-            print(f"Nano Banana 2 gagal, pindah fallback Vertex... Error: {e}")
-            
-        # Skenario Fallback ke Imagen Fast
-        from vertexai.vision_models import ImageGenerationModel
-        import vertexai
+        # Skenario Utama: Nano Banana 2
+        genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+        model = genai.GenerativeModel('models/nano-banana-2')
+        res = model.generate_content(safe_prompt)
+        for cand in res.candidates:
+            for part in cand.content.parts:
+                if hasattr(part, 'inline_data') and part.inline_data:
+                    return part.inline_data.data
+    except Exception as e:
+        print(f"Nano Banana 2 AI Studio gagal, pindah ke Vertex AI... Error: {e}")
         
-        creds = get_gcp_credentials()
-        if creds:
-            vertexai.init(project="careful-ensign-477104-p5", location="us-central1", credentials=creds)
+        # Skenario Fallback: Imagen Fast Generate 001
+        try:
+            from vertexai.vision_models import ImageGenerationModel
+            import vertexai
+            try:
+                from google.oauth2.service_account import Credentials
+                if "GCP_SERVICE_ACCOUNT" in st.secrets:
+                    creds = Credentials.from_service_account_info(st.secrets["GCP_SERVICE_ACCOUNT"])
+                    vertexai.init(project="careful-ensign-477104-p5", location="us-central1", credentials=creds)
+                else:
+                    vertexai.init(project="careful-ensign-477104-p5", location="us-central1")
+            except Exception:
+                vertexai.init(project="careful-ensign-477104-p5", location="us-central1")
+
             model = ImageGenerationModel.from_pretrained("imagen-3.0-fast-generate-001")
             res_vertex = model.generate_images(prompt=safe_prompt, number_of_images=1, aspect_ratio="1:1")
             return res_vertex.images[0]._image_bytes
-        else:
-            st.error("Gagal fallback: Service Account belum dipasang.")
+        except Exception as ex:
+            st.error("Semua jalur Google AI (AI Studio & Vertex) buntu.")
             return None
-            
-    except Exception as e:
-        st.error(f"Gagal total generate model C: {e}")
-        return None
 
 # ==============================================================================
-# POST-PROCESSING (LOGO)
+# POST-PROCESSING (LOGO & WATERMARK UMKM)
 # ==============================================================================
 def apply_dynamic_branding(main_bytes, logo_file, posisi):
     if not main_bytes or not logo_file: return main_bytes
@@ -298,7 +306,7 @@ def apply_dynamic_branding(main_bytes, logo_file, posisi):
     except Exception: return main_bytes
 
 # ==============================================================================
-# UI STREAMLIT
+# USER INTERFACE STREAMLIT UTAMA (DILENGKAPI INDIKATOR BIAYA)
 # ==============================================================================
 col_b1, col_b2 = st.columns([3, 1])
 with col_b1:
@@ -385,12 +393,12 @@ with col_r:
         with t_imgn:
             st.markdown('<div class="cost-badge">Estimasi Biaya API: ~$0.03 / Rp 480</div>', unsafe_allow_html=True)
             if st.button("Render Imagen 3.0", key="btn_a", use_container_width=True):
-                with st.spinner("Merender Imagen via GCP..."):
+                with st.spinner("Merender Imagen via API murni..."):
                     raw = generate_imagen_image(vis_edit)
                     st.session_state.img_mem["A"] = apply_dynamic_branding(raw, logo_file, posisi_logo) if raw else None
             if st.session_state.img_mem["A"]:
-                st.image(st.session_state.img_mem["A"], caption="Imagen 3.0")
-                st.download_button("⬇️ Download Imagen", data=st.session_state.img_mem["A"], file_name="imagen.png", mime="image/png", use_container_width=True)
+                st.image(st.session_state.img_mem["A"], caption="Model A: Imagen 3.0")
+                st.download_button("⬇️ Download Imagen", data=st.session_state.img_mem["A"], file_name="imagen_inamikro.png", mime="image/png", use_container_width=True)
 
         with t_dalle:
             st.markdown('<div class="cost-badge">Estimasi Biaya API: ~$0.05 / Rp 800</div>', unsafe_allow_html=True)
@@ -399,8 +407,8 @@ with col_r:
                     raw = generate_dalle_image(vis_edit)
                     st.session_state.img_mem["B"] = apply_dynamic_branding(raw, logo_file, posisi_logo) if raw else None
             if st.session_state.img_mem["B"]:
-                st.image(st.session_state.img_mem["B"], caption="GPT Image / DALL-E")
-                st.download_button("⬇️ Download GPT", data=st.session_state.img_mem["B"], file_name="gpt.png", mime="image/png", use_container_width=True)
+                st.image(st.session_state.img_mem["B"], caption="Model B: GPT Image / DALL-E")
+                st.download_button("⬇️ Download GPT", data=st.session_state.img_mem["B"], file_name="gpt_inamikro.png", mime="image/png", use_container_width=True)
 
         with t_gmn:
             st.markdown('<div class="cost-badge">Estimasi Biaya API: Termasuk Kuota Gemini / Gratis</div>', unsafe_allow_html=True)
@@ -409,7 +417,7 @@ with col_r:
                     raw = generate_gemini_flash_image(vis_edit)
                     st.session_state.img_mem["C"] = apply_dynamic_branding(raw, logo_file, posisi_logo) if raw else None
             if st.session_state.img_mem["C"]:
-                st.image(st.session_state.img_mem["C"], caption="Gemini Nano Banana 2 / Fast Generate")
-                st.download_button("⬇️ Download Gemini", data=st.session_state.img_mem["C"], file_name="gemini.png", mime="image/png", use_container_width=True)
+                st.image(st.session_state.img_mem["C"], caption="Model C: Gemini Nano Banana 2 / Fast Generate")
+                st.download_button("⬇️ Download Gemini", data=st.session_state.img_mem["C"], file_name="gemini_inamikro.png", mime="image/png", use_container_width=True)
     else:
         st.info("👈 Silakan isi data di sebelah kiri lalu tekan Generate.")
