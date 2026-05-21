@@ -357,7 +357,8 @@ with col_f:
         st.write("---")
         st.markdown("##### ➕ Input Item & Harga Manual (Satu-per-Satu):")
         
-        with st.get_container():
+        # FIX: Menggunakan st.container() yang benar
+        with st.container():
             c_p1, c_p2, c_p3 = st.columns([1.5, 1.2, 1.3])
             with c_p1: item_nama = st.text_input("Nama Item", placeholder="Siomay / Gyoza", key="input_item_nama")
             with c_p2: item_harga = st.number_input("Harga Item (Rp)", min_value=0, value=15000, step=1000, key="input_item_harga")
