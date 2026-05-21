@@ -5,7 +5,7 @@ import io
 import base64
 import requests
 import openai
-import pandas as pd # Ditambahkan untuk manajemen data form
+import pandas as pd
 from datetime import datetime
 from pathlib import Path
 from PIL import Image, ImageEnhance, ImageDraw, ImageFont
@@ -14,18 +14,15 @@ import google.generativeai as genai
 # ==============================================================================
 # KONFIGURASI HALAMAN & CSS RESMI INAMIKRO (ELEGAN & MODERN)
 # ==============================================================================
-st.set_page_config(page_title="Inamikro Ad Generator V18 Final", layout="wide", page_icon="📈")
+st.set_page_config(page_title="Inamikro Ad Generator V18 Pro", layout="wide", page_icon="📈")
 
-# Kustomisasi CSS untuk mempercantik UI agar tidak terlihat "biasa"
 st.markdown("""
 <style>
-    /* Mengubah font dasar dan background kontainer utama */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
     html, body, [data-testid="stAppViewContainer"] {
         font-family: 'Inter', sans-serif;
     }
     
-    /* Desain Header Utama ala Dashboard Profesional */
     .main-header { 
         background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
         padding: 2rem;
@@ -34,91 +31,49 @@ st.markdown("""
         margin-bottom: 2rem;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     }
-    .main-header h1 { 
-        color: #ffffff !important; 
-        font-size: 2.2rem; 
-        font-weight: 700;
-        margin: 0;
-    }
-    .main-header p {
-        color: #e2e8f0;
-        margin-top: 0.5rem;
-        font-size: 1rem;
-    }
+    .main-header h1 { color: #ffffff !important; font-size: 2.2rem; font-weight: 700; margin: 0; }
+    .main-header p { color: #e2e8f0; margin-top: 0.5rem; font-size: 1rem; }
     
-    /* Styling Label Langkah/Section */
     .step-label { 
-        font-weight: 700; 
-        font-size: 1.15rem; 
-        color: #1e40af; 
-        margin: 1.5rem 0 0.8rem 0;
-        padding-bottom: 0.3rem;
-        border-bottom: 2px solid #e2e8f0;
+        font-weight: 700; font-size: 1.15rem; color: #1e40af; 
+        margin: 1.5rem 0 0.8rem 0; padding-bottom: 0.3rem; border-bottom: 2px solid #e2e8f0;
     }
     
-    /* Card Container Borderless & Shadow-based */
     div[data-testid="stVerticalBlockBorderWithFormatting"] {
-        background-color: transparent;
-        border: 1px solid #e2e8f0 !important;
+        background-color: transparent; border: 1px solid #e2e8f0 !important;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        border-radius: 12px !important;
-        padding: 1.5rem !important;
+        border-radius: 12px !important; padding: 1.5rem !important;
     }
     
-    /* Fix Teks Kontainer Info agar Terbaca di Dark & Light Mode */
     .kbli-desc, .elemen-box, .photo-caption-box {
-        border-radius: 8px; 
-        padding: 0.75rem 1rem; 
-        font-size: 0.85rem; 
-        margin-top: 0.6rem;
-        color: #1e293b !important; 
-        line-height: 1.5;
+        border-radius: 8px; padding: 0.75rem 1rem; font-size: 0.85rem; 
+        margin-top: 0.6rem; color: #1e293b !important; line-height: 1.5;
     }
     
     .kbli-desc { background: #eff6ff; border-left: 4px solid #3b82f6; }
     .elemen-box { background: #f0fdf4; border-left: 4px solid #22c55e; }
     .photo-caption-box { background: #fff7ed; border-left: 4px solid #f97316; margin-bottom: 0.8rem;}
     
-    /* Badge Tag USP */
     .kw-tag { 
-        background: #e0f2fe; 
-        border-radius: 20px; 
-        padding: 6px 14px; 
-        font-size: 0.8rem; 
-        color: #0369a1; 
-        margin: 4px 4px 10px 0; 
-        display: inline-block; 
-        font-weight: 600; 
-        border: 1px solid #bae6fd;
+        background: #e0f2fe; border-radius: 20px; padding: 6px 14px; 
+        font-size: 0.8rem; color: #0369a1; margin: 4px 4px 10px 0; 
+        display: inline-block; font-weight: 600; border: 1px solid #bae6fd;
     }
     
-    /* Estimasi Biaya Badge */
     .cost-badge { 
-        background: #fee2e2; 
-        border-radius: 6px; 
-        padding: 0.4rem 0.8rem; 
-        font-size: 0.8rem; 
-        color: #991b1b; 
-        display: inline-block; 
-        font-weight: 600; 
-        margin-bottom: 0.8rem;
-        border: 1px solid #fca5a5;
+        background: #fee2e2; border-radius: 6px; padding: 0.4rem 0.8rem; 
+        font-size: 0.8rem; color: #991b1b; display: inline-block; 
+        font-weight: 600; margin-bottom: 0.8rem; border: 1px solid #fca5a5;
     }
     
     .master-prompt-badge { 
-        background: #f3e8ff; 
-        border-radius: 6px; 
-        padding: 0.4rem 0.8rem; 
-        font-size: 0.8rem; 
-        color: #6b21a8; 
-        display: inline-block; 
-        margin-bottom: 1rem;
-        border: 1px solid #e9d5ff;
+        background: #f3e8ff; border-radius: 6px; padding: 0.4rem 0.8rem; 
+        font-size: 0.8rem; color: #6b21a8; display: inline-block; 
+        margin-bottom: 1rem; border: 1px solid #e9d5ff;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# Render Header Baru
 st.markdown("""
 <div class="main-header">
     <h1>📈 Inamikro Ad Generator V18 Pro</h1>
@@ -169,9 +124,6 @@ BACKGROUND_OPTIONS = {
     "🌸 Pastel Aesthetic": "soft pastel pink and cream aesthetic background",
 }
 
-# ==============================================================================
-# INI-STATE DATA FORM MOKAP GOOGLE FORM (SKRIPSI TRACKING)
-# ==============================================================================
 if "skripsi_data" not in st.session_state:
     st.session_state.skripsi_data = []
 
@@ -194,8 +146,7 @@ class GeminiStudioWrapper:
             
             if hasattr(msg, 'content') and isinstance(msg.content, list):
                 for part in msg.content:
-                    if part.get("type") == "text":
-                        contents.append(part.get("text", ""))
+                    if part.get("type") == "text": contents.append(part.get("text", ""))
                     elif part.get("type") == "image_url":
                         b64_data = part["image_url"]["url"].split(",")[1]
                         img = Image.open(io.BytesIO(base64.b64decode(b64_data)))
@@ -216,7 +167,7 @@ llm_generator = GeminiStudioWrapper(model_name="gemini-2.5-pro", temperature=0.3
 llm_evaluator = GeminiStudioWrapper(model_name="gemini-2.5-pro", temperature=0.1)
 
 # ==============================================================================
-# PARSING & PROMPT BUILDING
+# PARSING & PROMPT BUILDING (TERMASUK FIX HARGA & PROMPT VISUAL DOSBING)
 # ==============================================================================
 def parse_output_for_image(markdown_text):
     try:
@@ -229,7 +180,7 @@ def parse_output_for_image(markdown_text):
     except Exception: pass
     return "", markdown_text
 
-def build_context_block(kategori, nama_produk, keywords_list, gaya, platform, market, mood, background, subjek, elemen_wajib, photo_descriptions=None):
+def build_context_block(kategori, nama_produk, keywords_list, gaya, platform, market, mood, background, subjek, elemen_wajib, harga_produk, promo_produk, photo_descriptions=None):
     market_str = ", ".join(market) if market else "Umum"
     keywords_str = ", ".join(keywords_list) if keywords_list else nama_produk
     elemen_str = "\n".join([f"  - {e}" for e in elemen_wajib])
@@ -243,17 +194,22 @@ def build_context_block(kategori, nama_produk, keywords_list, gaya, platform, ma
     return f"""
 === INPUT TERSTRUKTUR ===
 - Produk: {nama_produk} ({keywords_str})
+- Harga Resmi: Rp {harga_produk:,}
+- Promo Berlaku: {promo_produk if promo_produk else 'Tidak ada promo saat ini'}
 - Market: {market_str}
 - Kategori: {kategori} {photo_block}
 - Platform: {platform} (Tone: {gaya})
 - Visual: {subjek} di {bg_desc} ({mood})
 - Elemen Wajib:
 {elemen_str}
+
+=== PERINTAH TEGAS GENERASI VISUAL ===
+Jangan membuat gambar abstrak atau patung 3D geometris! Ide Visual harus berupa konsep fotografi komersial (Commercial Photography) nyata yang menampilkan wujud asli hidangan/produk '{nama_produk}' secara lezat, menggugah selera, rapi, dan siap saji/pakai sesuai dengan latar belakang yang dipilih.
 """
 
 @st.cache_data(show_spinner=False)
-def generate_ad_text_master(kategori, nama_produk, keywords_list, gaya, platform, market, mood, background, subjek, images_bytes_list, elemen_wajib, photo_descriptions=None):
-    context = build_context_block(kategori, nama_produk, keywords_list, gaya, platform, market, mood, background, subjek, elemen_wajib, photo_descriptions)
+def generate_ad_text_master(kategori, nama_produk, keywords_list, gaya, platform, market, mood, background, subjek, images_bytes_list, elemen_wajib, harga_produk, promo_produk, photo_descriptions=None):
+    context = build_context_block(kategori, nama_produk, keywords_list, gaya, platform, market, mood, background, subjek, elemen_wajib, harga_produk, promo_produk, photo_descriptions)
     fidelity = "\n=== ATURAN VISUAL ===\nIde Visual HARUS mereplikasi BENTUK produk dari foto referensi persis.\n" if images_bytes_list else ""
     full_prompt = f"{MASTER_PROMPT_FULL}\n{context}\n{fidelity}\n=== TUGAS: Buat Teks Iklan {platform} ==="
     
@@ -381,6 +337,13 @@ with col_f:
         keywords_raw = st.text_input("Keywords USP", placeholder="keju creamy, halal, harga terjangkau")
         keywords = [k.strip() for k in keywords_raw.split(",") if k.strip()]
         
+        # BARU: FIELD INPUT UNTUK HARGA & PROMO (FIX REVISI DOSBING)
+        col_inv1, col_inv2 = st.columns(2)
+        with col_inv1:
+            harga_produk = st.number_input("Harga Produk (Rp)", min_value=0, value=25000, step=1000)
+        with col_inv2:
+            promo_produk = st.text_input("Promo / Diskon (Opsional)", placeholder="Diskon 10% / Beli 2 Gratis 1")
+        
         if keywords: st.markdown(" ".join([f'<span class="kw-tag">{k}</span>' for k in keywords]), unsafe_allow_html=True)
         
         kategori = st.selectbox("Kategori Usaha", list(KBLI_DATA.keys()))
@@ -412,7 +375,8 @@ with col_f:
             st.session_state.ai_review = None
             with st.spinner("AI sedang meracik copywriting..."):
                 img_bytes = [f.getvalue() for f in foto_produk] if foto_produk else []
-                res = generate_ad_text_master(kategori, nama_produk, keywords, gaya, platform, market, mood, bg, subjek, img_bytes, get_elemen_wajib(kategori), foto_desc)
+                # Panggil fungsi dengan tambahan parameter harga_produk dan promo_produk
+                res = generate_ad_text_master(kategori, nama_produk, keywords, gaya, platform, market, mood, bg, subjek, img_bytes, get_elemen_wajib(kategori), harga_produk, promo_produk, foto_desc)
                 vis, txt = parse_output_for_image(res)
                 st.session_state.main_txt, st.session_state.vis_prompt = txt, vis
                 st.session_state.last_p = {"nama": nama_produk, "plat": platform}
@@ -466,8 +430,8 @@ with col_r:
                 st.image(st.session_state.img_mem["C"], caption="Model C: Gemini Nano Banana")
 
         # ==============================================================================
-        # 📊 BARU: FITUR FORM INPUT MOKAP GOOGLE FORM (REVISI DOSEN 2)
-# ==============================================================================
+        # 📊 FORM MOCKUP (EVALUASI BAB 4 SKRIPSI)
+        # ==============================================================================
         st.divider()
         st.markdown('<div class="step-label">📊 Form Pendataan Hasil Evaluasi (Per Bidang)</div>', unsafe_allow_html=True)
         st.caption("Gunakan form di bawah ini untuk menyimpan log pengujian skripsi berdasarkan bidang.")
@@ -499,7 +463,6 @@ with col_r:
             df_log = pd.DataFrame(st.session_state.skripsi_data)
             st.dataframe(df_log, use_container_width=True)
             
-            # Button untuk Export data jadi CSV untuk lampiran Bab 4
             csv_data = df_log.to_csv(index=False).encode('utf-8')
             st.download_button(
                 label="📥 Download Data Log Pengujian (.CSV)",
