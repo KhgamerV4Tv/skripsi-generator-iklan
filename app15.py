@@ -139,7 +139,7 @@ def load_gcp_credentials():
     if "GCP_SERVICE_ACCOUNT_JSON" in st.secrets:
         try:
             info = json.loads(st.secrets["GCP_SERVICE_ACCOUNT_JSON"])
-            return Credentials.from_service_account_info(info), info["project_id"]
+            return Credentials.from_service_account_info(info), info["careful-ensign-477104-p5"]
         except Exception as e:
             st.error(f"Gagal memproses GCP_SERVICE_ACCOUNT_JSON: {e}")
             
@@ -147,7 +147,7 @@ def load_gcp_credentials():
     if "GCP_SERVICE_ACCOUNT" in st.secrets:
         try:
             info = dict(st.secrets["GCP_SERVICE_ACCOUNT"])
-            return Credentials.from_service_account_info(info), info["project_id"]
+            return Credentials.from_service_account_info(info), info["careful-ensign-477104-p5"]
         except Exception as e:
             st.error(f"Gagal memproses GCP_SERVICE_ACCOUNT TOML: {e}")
             
