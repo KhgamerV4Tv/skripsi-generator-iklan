@@ -241,7 +241,7 @@ def evaluate_ad_quality(brand_name, platform, generated_ad):
     return llm_evaluator.invoke([DummyMsg(prompt)]).content
 
 # ==============================================================================
-# MODEL GENERATOR VISUAL
+# MODEL GENERATOR VISUAL DENGAN PENGUNCIAN KONTEKS (PROMPT ANCHORING FIX)
 # ==============================================================================
 @st.cache_data(show_spinner=False)
 def generate_imagen_image(prompt_text):
@@ -257,7 +257,12 @@ def generate_imagen_image(prompt_text):
         creds = Credentials.from_service_account_info(secrets_dict)
         vertexai.init(project="careful-ensign-477104-p5", location="us-central1", credentials=creds)
         model = ImageGenerationModel.from_pretrained("imagen-3.0-generate-002")
-        response = model.generate_images(prompt=f"professional product photography, {prompt_text}", number_of_images=1, aspect_ratio="1:1")
+        
+        # --- FIX KONEKSI: Menyuntikkan Konteks Brand & Melarang Keras Halusinasi Abstrak ---
+        context_anchor = f"Commercial product photography for brand '{st.session_state.get('brand_name', 'UMKM')}' with category {st.session_state.get('kategori', 'Product')}. Clean and realistic presentation, no abstract elements, no 3D sculptures, highly relevant to the food/item menu, "
+        final_prompt = context_anchor + prompt_text
+        
+        response = model.generate_images(prompt=final_prompt, number_of_images=1, aspect_ratio="1:1")
         return response.images[0]._image_bytes
     except Exception as e:
         st.error(f"Imagen Error: {e}")
@@ -268,8 +273,12 @@ def generate_dalle_image(prompt_text):
     if not prompt_text: return None
     try:
         client = openai.OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
-        safe_prompt = prompt_text[:900] 
-        res = client.images.generate(model="gpt-image-2", prompt=safe_prompt, size="1024x1024", n=1)
+        
+        # --- FIX KONEKSI: Menyuntikkan Konteks Brand & Melarang Keras Halusinasi Abstrak ---
+        context_anchor = f"Commercial product advertisement photography for '{st.session_state.get('brand_name', 'UMKM')}' showing realistic products of {st.session_state.get('kategori', 'Product')}. Photorealistic, delicious look, appetizing style, no abstract 3D figures, no geometric sculptures, "
+        final_prompt = (context_anchor + prompt_text)[:900]
+        
+        res = client.images.generate(model="gpt-image-2", prompt=final_prompt, size="1024x1024", n=1)
         if res.data[0].url: return requests.get(res.data[0].url).content
     except Exception as e:
         st.error(f"Gagal total menghubungi OpenAI (gpt-image-2): {e}")
@@ -278,11 +287,15 @@ def generate_dalle_image(prompt_text):
 @st.cache_data(show_spinner=False)
 def generate_gemini_flash_image(prompt_text):
     if not prompt_text: return None
-    safe_prompt = prompt_text[:900]
+    
+    # --- FIX KONEKSI: Menyuntikkan Konteks Brand & Melarang Keras Halusinasi Abstrak ---
+    context_anchor = f"Realistic commercial marketing photography for '{st.session_state.get('brand_name', 'UMKM')}' matching the promotional text. Clean setup, sharp focus on the real items, strictly no abstract shape or complex 3D statues, "
+    final_prompt = (context_anchor + prompt_text)[:900]
+    
     try:
         genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
         model = genai.GenerativeModel('models/nano-banana-2')
-        res = model.generate_content(safe_prompt)
+        res = model.generate_content(final_prompt)
         for cand in res.candidates:
             for part in cand.content.parts:
                 if hasattr(part, 'inline_data') and part.inline_data: return part.inline_data.data
@@ -292,11 +305,10 @@ def generate_gemini_flash_image(prompt_text):
             import vertexai
             vertexai.init(project="careful-ensign-477104-p5", location="us-central1")
             model = ImageGenerationModel.from_pretrained("imagen-3.0-fast-generate-001")
-            res_vertex = model.generate_images(prompt=safe_prompt, number_of_images=1, aspect_ratio="1:1")
+            res_vertex = model.generate_images(prompt=final_prompt, number_of_images=1, aspect_ratio="1:1")
             return res_vertex.images[0]._image_bytes
         except Exception:
             return None
-
 # ==============================================================================
 # POST-PROCESSING
 # ==============================================================================
