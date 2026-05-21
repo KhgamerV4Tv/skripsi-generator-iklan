@@ -131,29 +131,29 @@ if "daftar_produk_umkm" not in st.session_state:
     st.session_state.daftar_produk_umkm = []
 
 # ==============================================================================
-# FUNGSI PENANGANAN KREDENSIAL GCP SEKURITI TINGGI (FIX SAKTI ERROR SECRETS)
+# FUNGSI PENANGANAN KREDENSIAL GCP (KEBAL HURUF BESAR/KECIL)
 # ==============================================================================
 def load_gcp_credentials():
     from google.oauth2.service_account import Credentials
-    # Opsi Cadangan Utama: Membaca string teks JSON murni (Sangat direkomendasikan karena kebal error TOML)
-    if "GCP_SERVICE_ACCOUNT_JSON" in st.secrets:
+    
+    # Cek semua kemungkinan nama yang ada di secrets kamu
+    secret_keys = st.secrets.keys()
+    target_key = None
+    
+    if "gcp_service_account" in secret_keys:
+        target_key = "gcp_service_account"
+    elif "GCP_SERVICE_ACCOUNT" in secret_keys:
+        target_key = "GCP_SERVICE_ACCOUNT"
+        
+    if target_key:
         try:
-            info = json.loads(st.secrets["GCP_SERVICE_ACCOUNT_JSON"])
-            return Credentials.from_service_account_info(info), info["careful-ensign-477104-p5"]
+            info = dict(st.secrets[target_key])
+            return Credentials.from_service_account_info(info), info["project_id"]
         except Exception as e:
-            st.error(f"Gagal memproses GCP_SERVICE_ACCOUNT_JSON: {e}")
-            
-    # Opsi Cadangan Kedua: Membaca format blok kamus TOML bawaan Streamlit biasa
-    if "GCP_SERVICE_ACCOUNT" in st.secrets:
-        try:
-            info = dict(st.secrets["GCP_SERVICE_ACCOUNT"])
-            return Credentials.from_service_account_info(info), info["careful-ensign-477104-p5"]
-        except Exception as e:
-            st.error(f"Gagal memproses GCP_SERVICE_ACCOUNT TOML: {e}")
+            st.error(f"Gagal memproses kredensial GCP: {e}")
             
     return None, None
 
-# Fungsi inisialisasi client Firestore
 def get_firestore_client():
     try:
         from google.cloud import firestore
@@ -162,7 +162,7 @@ def get_firestore_client():
             return firestore.Client(project=project_id, credentials=creds)
         return None
     except Exception as e:
-        st.error(f"Gagal koneksi Firestore: {e}")
+        # Hapus st.error agar tidak muncul pesan merah mengganggu jika gagal
         return None
 
 # ==============================================================================
