@@ -124,7 +124,6 @@ BACKGROUND_OPTIONS = {
     "🌸 Pastel Aesthetic": "soft pastel pink and cream aesthetic background",
 }
 
-# --- INITIALIZATION SESSION STATE ---
 if "skripsi_data" not in st.session_state:
     st.session_state.skripsi_data = []
 if "daftar_produk_umkm" not in st.session_state:
@@ -170,7 +169,7 @@ llm_generator = GeminiStudioWrapper(model_name="gemini-2.5-pro", temperature=0.3
 llm_evaluator = GeminiStudioWrapper(model_name="gemini-2.5-pro", temperature=0.1)
 
 # ==============================================================================
-# PARSING & PROMPT BUILDING (MENDUKUNG MULTI-PRODUK DINAMIS)
+# PARSING & PROMPT BUILDING
 # ==============================================================================
 def parse_output_for_image(markdown_text):
     try:
@@ -183,17 +182,21 @@ def parse_output_for_image(markdown_text):
     except Exception: pass
     return "", markdown_text
 
-def build_context_block(kategori, brand_name, keywords_list, gaya, platform, market, mood, background, subjek, elemen_wajib, list_produk, photo_descriptions=None):
+def build_context_block(kategori, brand_name, keywords_list, gaya, platform, market, mood, background, subjek, elemen_wajib, mode_promo, nama_produk_global, harga_global, promo_global, list_produk, photo_descriptions=None):
     market_str = ", ".join(market) if market else "Umum"
     keywords_str = ", ".join(keywords_list) if keywords_list else brand_name
     elemen_str = "\n".join([f"  - {e}" for e in elemen_wajib])
     bg_desc = BACKGROUND_OPTIONS.get(background, background)
 
-    # Membangun teks terstruktur list produk & harga untuk disuapi ke Gemini
+    # Memetakan data produk berdasarkan mode promo yang dipilih user
     produk_block = ""
-    for idx, p in enumerate(list_produk):
-        promo_text = f" (Promo: {p['promo']})" if p['promo'] else " (Tanpa Promo)"
-        produk_block += f"\n  {idx+1}. {p['nama']} -> Harga: Rp {p['harga']:,}{promo_text}"
+    if mode_promo == "Diskon Sama untuk Semua (Global)":
+        promo_text = f" (Diberikan Promo Global: {promo_global})" if promo_global else " (Tanpa Promo)"
+        produk_block = f"\n  - Nama Produk/Menu: {nama_produk_global}\n  - Estimasi Harga Utama: Rp {harga_global:,}{promo_text}\n  - Catatan: Promo ini berlaku pukul rata untuk seluruh komoditas produk tersebut."
+    else:
+        for idx, p in enumerate(list_produk):
+            p_promo = f" (Promo: {p['promo']})" if p['promo'] else " (Tanpa Promo)"
+            produk_block += f"\n  {idx+1}. {p['nama']} -> Harga: Rp {p['harga']:,}{p_promo}"
 
     photo_block = ""
     if photo_descriptions:
@@ -205,7 +208,7 @@ def build_context_block(kategori, brand_name, keywords_list, gaya, platform, mar
 - Nama Brand/Usaha: {brand_name}
 - Karakteristik/USP Sektor: {keywords_str}
 - Kategori Usaha: {kategori}
-- Daftar Item Produk & Rincian Harga:{produk_block}
+- Strategi Penawaran Produk:{produk_block}
 - Target Market: {market_str} {photo_block}
 - Platform Media: {platform} (Tone Copywriting: {gaya})
 - Konsep Visual: {subjek} di {bg_desc} ({mood} atmosphere)
@@ -213,12 +216,12 @@ def build_context_block(kategori, brand_name, keywords_list, gaya, platform, mar
 {elemen_str}
 
 === PERINTAH TEGAS GENERASI VISUAL ===
-Jangan membuat gambar abstrak atau patung 3D geometris! Ide Visual harus berupa konsep fotografi komersial (Commercial Product Food/Fashion Photography) nyata yang menampilkan wujud asli kombinasi item '{brand_name}' secara lezat, menggugah selera, rapi, dan siap saji/pakai sesuai dengan suasana latar belakang yang dipilih.
+Jangan membuat gambar abstrak atau patung 3D geometris! Ide Visual harus berupa konsep fotografi komersial (Commercial Product Photography) nyata yang menampilkan wujud asli hidangan/produk '{brand_name}' secara lezat, menggugah selera, rapi, dan siap saji/pakai sesuai dengan suasana latar belakang yang dipilih.
 """
 
 @st.cache_data(show_spinner=False)
-def generate_ad_text_master(kategori, brand_name, keywords_list, gaya, platform, market, mood, background, subjek, images_bytes_list, elemen_wajib, list_produk, photo_descriptions=None):
-    context = build_context_block(kategori, brand_name, keywords_list, gaya, platform, market, mood, background, subjek, elemen_wajib, list_produk, photo_descriptions)
+def generate_ad_text_master(kategori, brand_name, keywords_list, gaya, platform, market, mood, background, subjek, images_bytes_list, elemen_wajib, mode_promo, nama_produk_global, harga_global, promo_global, list_produk, photo_descriptions=None):
+    context = build_context_block(kategori, brand_name, keywords_list, gaya, platform, market, mood, background, subjek, elemen_wajib, mode_promo, nama_produk_global, harga_global, promo_global, list_produk, photo_descriptions)
     fidelity = "\n=== ATURAN VISUAL ===\nIde Visual HARUS mereplikasi BENTUK produk dari foto referensi persis.\n" if images_bytes_list else ""
     full_prompt = f"{MASTER_PROMPT_FULL}\n{context}\n{fidelity}\n=== TUGAS: Buat Teks Iklan {platform} ==="
     
@@ -340,10 +343,10 @@ with col_f:
         with col_l2: posisi_logo = st.selectbox("Posisi Logo", ["Kanan Atas", "Kiri Atas", "Kanan Bawah", "Kiri Bawah"])
         market = st.multiselect("Target Market", ["Umum", "Mahasiswa", "Pekerja Kantoran", "Ibu Rumah Tangga", "Anak Sekolah / Remaja"], default=["Umum"])
 
-    st.markdown('<div class="step-label">📝 Langkah 2: Data Produk & Multi-Pricing Dinamis</div>', unsafe_allow_html=True)
+    st.markdown('<div class="step-label">📝 Langkah 2: Data Produk & Manajemen Harga</div>', unsafe_allow_html=True)
     with st.container(border=True):
-        brand_name = st.text_input("Nama Brand / Usaha UMKM", placeholder="Rumah Pasila / Kedai Siomay")
-        keywords_raw = st.text_input("Keywords USP", placeholder="premium, bumbu kacang kental, halal")
+        brand_name = st.text_input("Nama Brand / Usaha UMKM", placeholder="Rumah Pasila")
+        keywords_raw = st.text_input("Keywords USP Usaha", placeholder="tanpa pengawet, premium, isi tebal")
         keywords = [k.strip() for k in keywords_raw.split(",") if k.strip()]
         if keywords: st.markdown(" ".join([f'<span class="kw-tag">{k}</span>' for k in keywords]), unsafe_allow_html=True)
         
@@ -352,37 +355,49 @@ with col_f:
         st.markdown(f"<div class='elemen-box'><b>✅ Elemen Wajib Brosur:</b> {', '.join(get_elemen_wajib(kategori))}</div>", unsafe_allow_html=True)
         
         # ----------------------------------------------------------------------
-        # DYNAMIC MULTI-PRODUCT FORM MANAGER (KLIK SATU-SATU MANUAL)
+        # BARU: SELECTION MODE STRATEGI HARGA (GLOBAL VS MANUAL PER ITEM)
         # ----------------------------------------------------------------------
         st.write("---")
-        st.markdown("##### ➕ Input Item & Harga Manual (Satu-per-Satu):")
+        mode_promo = st.radio("Metode Penginputan Harga & Promo:", ["Diskon Sama untuk Semua (Global)", "Diskon Berbeda Per Item (Input Satu-Satu)"])
         
-        # FIX: Menggunakan st.container() yang benar
-        with st.container():
-            c_p1, c_p2, c_p3 = st.columns([1.5, 1.2, 1.3])
-            with c_p1: item_nama = st.text_input("Nama Item", placeholder="Siomay / Gyoza", key="input_item_nama")
-            with c_p2: item_harga = st.number_input("Harga Item (Rp)", min_value=0, value=15000, step=1000, key="input_item_harga")
-            with c_p3: item_promo = st.text_input("Potongan/Promo", placeholder="Diskon 10rb", key="input_item_promo")
-            
-            if st.button("➕ Tambah Item ke Daftar", use_container_width=True):
-                if item_nama:
-                    st.session_state.daftar_produk_umkm.append({
-                        "nama": item_nama,
-                        "harga": item_harga,
-                        "promo": item_promo
-                    })
-                    st.toast(f"{item_nama} ditambahkan!", icon="📝")
-                else:
-                    st.warning("Nama item tidak boleh kosong untuk menambahkan.")
+        # Inisialisasi variabel default agar tidak terjadi NameError
+        nama_produk_global = ""
+        harga_global = 0
+        promo_global = ""
 
-        # Menampilkan isi keranjang produk yang sudah di-klik manual
-        if st.session_state.daftar_produk_umkm:
-            st.markdown("**Daftar Item Terdaftar Sekarang:**")
-            df_curr_prod = pd.DataFrame(st.session_state.daftar_produk_umkm)
-            st.dataframe(df_curr_prod, use_container_width=True)
-            if st.button("🗑️ Kosongkan Semua Item", type="secondary", use_container_width=True):
-                st.session_state.daftar_produk_umkm = []
-                st.rerun()
+        if mode_promo == "Diskon Sama untuk Semua (Global)":
+            st.markdown("##### 🌍 Input Harga & Promo Massal (Global)")
+            nama_produk_global = st.text_input("Nama Menu / Kelompok Produk", placeholder="Siomay, Gyoza, dan Dimsum Goreng")
+            c_g1, c_g2 = st.columns(2)
+            with c_g1: harga_global = st.number_input("Estimasi Harga Mulai (Rp)", min_value=0, value=30000, step=1000)
+            with c_g2: promo_global = st.text_input("Promo Massal", placeholder="Potongan 10rb porsi / Beli 2 Gratis 1")
+        
+        else:
+            st.markdown("##### ➕ Input Item Manual Satu-per-Satu")
+            with st.container():
+                c_p1, c_p2, c_p3 = st.columns([1.5, 1.2, 1.3])
+                with c_p1: item_nama = st.text_input("Nama Item", placeholder="Siomay", key="input_item_nama")
+                with c_p2: item_harga = st.number_input("Harga Item (Rp)", min_value=0, value=15000, step=1000, key="input_item_harga")
+                with c_p3: item_promo = st.text_input("Potongan/Promo", placeholder="Diskon 10rb", key="input_item_promo")
+                
+                if st.button("➕ Tambah Item ke Daftar", use_container_width=True):
+                    if item_nama:
+                        st.session_state.daftar_produk_umkm.append({
+                            "nama": item_nama,
+                            "harga": item_harga,
+                            "promo": item_promo
+                        })
+                        st.toast(f"{item_nama} ditambahkan!", icon="📝")
+                    else:
+                        st.warning("Nama item wajib diisi sebelum klik tambah.")
+
+            if st.session_state.daftar_produk_umkm:
+                st.markdown("**Daftar Item Terdaftar Saat Ini:**")
+                df_curr_prod = pd.DataFrame(st.session_state.daftar_produk_umkm)
+                st.dataframe(df_curr_prod, use_container_width=True)
+                if st.button("🗑️ Kosongkan Daftar Item", type="secondary", use_container_width=True):
+                    st.session_state.daftar_produk_umkm = []
+                    st.rerun()
         # ----------------------------------------------------------------------
 
         st.write("---")
@@ -393,7 +408,7 @@ with col_f:
             for i, f in enumerate(foto_produk[:3]):
                 c1, c2 = st.columns([1, 2.5])
                 with c1: st.image(f, use_container_width=True)
-                with c2: foto_desc.append(st.text_input(f"Desc Foto {i+1}", key=f"f_{i}", label_visibility="collapsed", placeholder="Contoh: Wadah kotak mika"))
+                with c2: foto_desc.append(st.text_input(f"Desc Foto {i+1}", key=f"f_{i}", label_visibility="collapsed", placeholder="Contoh: Tekstur saus"))
 
     st.markdown('<div class="step-label">🎯 Langkah 3: Strategi Platform</div>', unsafe_allow_html=True)
     with st.container(border=True):
@@ -407,15 +422,19 @@ with col_f:
     if st.button("🚀 GENERATE IKLAN", type="primary", use_container_width=True):
         if not brand_name: 
             st.warning("Isi nama brand/usaha dulu!")
-        elif not st.session_state.daftar_produk_umkm:
-            st.warning("Daftar item produk masih kosong! Tambahkan minimal 1 item produk di atas.")
+        elif mode_promo == "Diskon Berbeda Per Item (Input Satu-Satu)" and not st.session_state.daftar_produk_umkm:
+            st.warning("Daftar item produk kosong! Tambahkan minimal 1 item produk atau pilih mode Diskon Global.")
         else:
             st.session_state.img_mem = {"A": None, "B": None, "C": None}
             st.session_state.ai_review = None
             with st.spinner("AI sedang meracik copywriting..."):
                 img_bytes = [f.getvalue() for f in foto_produk] if foto_produk else []
-                # Mengirimkan array st.session_state.daftar_produk_umkm ke model
-                res = generate_ad_text_master(kategori, brand_name, keywords, gaya, platform, market, mood, bg, subjek, img_bytes, get_elemen_wajib(kategori), st.session_state.daftar_produk_umkm, foto_desc)
+                # Mengirimkan seluruh variabel skenario promo baru ke backend generator
+                res = generate_ad_text_master(
+                    kategori, brand_name, keywords, gaya, platform, market, mood, bg, subjek, img_bytes, 
+                    get_elemen_wajib(kategori), mode_promo, nama_produk_global, harga_global, promo_global, 
+                    st.session_state.daftar_produk_umkm, foto_desc
+                )
                 vis, txt = parse_output_for_image(res)
                 st.session_state.main_txt, st.session_state.vis_prompt = txt, vis
                 st.session_state.last_p = {"nama": brand_name, "plat": platform}
