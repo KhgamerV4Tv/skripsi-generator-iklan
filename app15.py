@@ -6,6 +6,7 @@ import base64
 import requests
 import openai
 import pandas as pd
+import json # Ditambahkan untuk memproses string JSON rahasia
 from datetime import datetime
 from pathlib import Path
 from PIL import Image, ImageEnhance, ImageDraw, ImageFont
@@ -18,7 +19,7 @@ st.set_page_config(page_title="Inamikro Ad Generator V18 Pro", layout="wide", pa
 
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght=400;500;600;700&display=swap');
     html, body, [data-testid="stAppViewContainer"] {
         font-family: 'Inter', sans-serif;
     }
@@ -130,6 +131,41 @@ if "daftar_produk_umkm" not in st.session_state:
     st.session_state.daftar_produk_umkm = []
 
 # ==============================================================================
+# FUNGSI PENANGANAN KREDENSIAL GCP SEKURITI TINGGI (FIX SAKTI ERROR SECRETS)
+# ==============================================================================
+def load_gcp_credentials():
+    from google.oauth2.service_account import Credentials
+    # Opsi Cadangan Utama: Membaca string teks JSON murni (Sangat direkomendasikan karena kebal error TOML)
+    if "GCP_SERVICE_ACCOUNT_JSON" in st.secrets:
+        try:
+            info = json.loads(st.secrets["GCP_SERVICE_ACCOUNT_JSON"])
+            return Credentials.from_service_account_info(info), info["project_id"]
+        except Exception as e:
+            st.error(f"Gagal memproses GCP_SERVICE_ACCOUNT_JSON: {e}")
+            
+    # Opsi Cadangan Kedua: Membaca format blok kamus TOML bawaan Streamlit biasa
+    if "GCP_SERVICE_ACCOUNT" in st.secrets:
+        try:
+            info = dict(st.secrets["GCP_SERVICE_ACCOUNT"])
+            return Credentials.from_service_account_info(info), info["project_id"]
+        except Exception as e:
+            st.error(f"Gagal memproses GCP_SERVICE_ACCOUNT TOML: {e}")
+            
+    return None, None
+
+# Fungsi inisialisasi client Firestore
+def get_firestore_client():
+    try:
+        from google.cloud import firestore
+        creds, project_id = load_gcp_credentials()
+        if creds and project_id:
+            return firestore.Client(project=project_id, credentials=creds)
+        return None
+    except Exception as e:
+        st.error(f"Gagal koneksi Firestore: {e}")
+        return None
+
+# ==============================================================================
 # ENGINE GENERATOR TEKS MURNI GOOGLE GEMINI SDK
 # ==============================================================================
 class GeminiStudioWrapper:
@@ -188,7 +224,6 @@ def build_context_block(kategori, brand_name, keywords_list, gaya, platform, mar
     elemen_str = "\n".join([f"  - {e}" for e in elemen_wajib])
     bg_desc = BACKGROUND_OPTIONS.get(background, background)
 
-    # Memetakan data produk berdasarkan mode promo yang dipilih user
     produk_block = ""
     if mode_promo == "Diskon Sama untuk Semua (Global)":
         promo_text = f" (Diberikan Promo Global: {promo_global})" if promo_global else " (Tanpa Promo)"
@@ -241,7 +276,7 @@ def evaluate_ad_quality(brand_name, platform, generated_ad):
     return llm_evaluator.invoke([DummyMsg(prompt)]).content
 
 # ==============================================================================
-# MODEL GENERATOR VISUAL DENGAN PENGUNCIAN KONTEKS (PROMPT ANCHORING FIX)
+# MODEL GENERATOR VISUAL DENGAN PROMPT ANCHORING (FIX KONEKSI SINKRONISASI)
 # ==============================================================================
 @st.cache_data(show_spinner=False)
 def generate_imagen_image(prompt_text):
@@ -249,16 +284,14 @@ def generate_imagen_image(prompt_text):
     try:
         from vertexai.vision_models import ImageGenerationModel
         import vertexai
-        from google.oauth2.service_account import Credentials
-        if "GCP_SERVICE_ACCOUNT" not in st.secrets:
-            st.error("Secrets GCP_SERVICE_ACCOUNT tidak terdeteksi oleh aplikasi!")
+        creds, project_id = load_gcp_credentials()
+        if not creds or not project_id:
+            st.error("Secrets GCP Kredensial tidak terdeteksi oleh aplikasi!")
             return None
-        secrets_dict = dict(st.secrets["GCP_SERVICE_ACCOUNT"])
-        creds = Credentials.from_service_account_info(secrets_dict)
-        vertexai.init(project="careful-ensign-477104-p5", location="us-central1", credentials=creds)
+            
+        vertexai.init(project=project_id, location="us-central1", credentials=creds)
         model = ImageGenerationModel.from_pretrained("imagen-3.0-generate-002")
         
-        # --- FIX KONEKSI: Menyuntikkan Konteks Brand & Melarang Keras Halusinasi Abstrak ---
         context_anchor = f"Commercial product photography for brand '{st.session_state.get('brand_name', 'UMKM')}' with category {st.session_state.get('kategori', 'Product')}. Clean and realistic presentation, no abstract elements, no 3D sculptures, highly relevant to the food/item menu, "
         final_prompt = context_anchor + prompt_text
         
@@ -273,8 +306,6 @@ def generate_dalle_image(prompt_text):
     if not prompt_text: return None
     try:
         client = openai.OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
-        
-        # --- FIX KONEKSI: Menyuntikkan Konteks Brand & Melarang Keras Halusinasi Abstrak ---
         context_anchor = f"Commercial product advertisement photography for '{st.session_state.get('brand_name', 'UMKM')}' showing realistic products of {st.session_state.get('kategori', 'Product')}. Photorealistic, delicious look, appetizing style, no abstract 3D figures, no geometric sculptures, "
         final_prompt = (context_anchor + prompt_text)[:900]
         
@@ -287,11 +318,8 @@ def generate_dalle_image(prompt_text):
 @st.cache_data(show_spinner=False)
 def generate_gemini_flash_image(prompt_text):
     if not prompt_text: return None
-    
-    # --- FIX KONEKSI: Menyuntikkan Konteks Brand & Melarang Keras Halusinasi Abstrak ---
     context_anchor = f"Realistic commercial marketing photography for '{st.session_state.get('brand_name', 'UMKM')}' matching the promotional text. Clean setup, sharp focus on the real items, strictly no abstract shape or complex 3D statues, "
     final_prompt = (context_anchor + prompt_text)[:900]
-    
     try:
         genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
         model = genai.GenerativeModel('models/nano-banana-2')
@@ -303,12 +331,17 @@ def generate_gemini_flash_image(prompt_text):
         try:
             from vertexai.vision_models import ImageGenerationModel
             import vertexai
-            vertexai.init(project="careful-ensign-477104-p5", location="us-central1")
+            creds, project_id = load_gcp_credentials()
+            if creds and project_id:
+                vertexai.init(project=project_id, location="us-central1", credentials=creds)
+            else:
+                vertexai.init(project="careful-ensign-477104-p5", location="us-central1")
             model = ImageGenerationModel.from_pretrained("imagen-3.0-fast-generate-001")
             res_vertex = model.generate_images(prompt=final_prompt, number_of_images=1, aspect_ratio="1:1")
             return res_vertex.images[0]._image_bytes
         except Exception:
             return None
+
 # ==============================================================================
 # POST-PROCESSING
 # ==============================================================================
@@ -345,8 +378,9 @@ col_f, col_r = st.columns([1, 1.35], gap="large")
 
 # --- KOLOM KIRI: INPUT DATA ---
 with col_f:
-    mp_status = "✅ Master Prompt V1.0 Aktif" if MASTER_PROMPT_PATH.exists() else "⚠️ Master Prompt fallback"
-    st.markdown(f'<div class="master-prompt-badge">🧠 {mp_status}</div>', unsafe_allow_html=True)
+    db = get_firestore_client()
+    db_status = "✅ Database Cloud Firestore Terkoneksi" if db else "⚠️ Firestore Mode Lokal Aktif"
+    st.markdown(f'<div class="master-prompt-badge">🧠 {db_status}</div>', unsafe_allow_html=True)
 
     st.markdown('<div class="step-label">📋 Langkah 1: Identitas & Branding UMKM</div>', unsafe_allow_html=True)
     with st.container(border=True):
@@ -358,21 +392,20 @@ with col_f:
     st.markdown('<div class="step-label">📝 Langkah 2: Data Produk & Manajemen Harga</div>', unsafe_allow_html=True)
     with st.container(border=True):
         brand_name = st.text_input("Nama Brand / Usaha UMKM", placeholder="Rumah Pasila")
+        st.session_state['brand_name'] = brand_name
+        
         keywords_raw = st.text_input("Keywords USP Usaha", placeholder="tanpa pengawet, premium, isi tebal")
         keywords = [k.strip() for k in keywords_raw.split(",") if k.strip()]
         if keywords: st.markdown(" ".join([f'<span class="kw-tag">{k}</span>' for k in keywords]), unsafe_allow_html=True)
         
         kategori = st.selectbox("Kategori Usaha", list(KBLI_DATA.keys()))
+        st.session_state['kategori'] = kategori
         st.markdown(f"<div class='kbli-desc'>📌 <b>Sektor:</b> {KBLI_DATA[kategori]['desc']}</div>", unsafe_allow_html=True)
         st.markdown(f"<div class='elemen-box'><b>✅ Elemen Wajib Brosur:</b> {', '.join(get_elemen_wajib(kategori))}</div>", unsafe_allow_html=True)
         
-        # ----------------------------------------------------------------------
-        # BARU: SELECTION MODE STRATEGI HARGA (GLOBAL VS MANUAL PER ITEM)
-        # ----------------------------------------------------------------------
         st.write("---")
         mode_promo = st.radio("Metode Penginputan Harga & Promo:", ["Diskon Sama untuk Semua (Global)", "Diskon Berbeda Per Item (Input Satu-Satu)"])
         
-        # Inisialisasi variabel default agar tidak terjadi NameError
         nama_produk_global = ""
         harga_global = 0
         promo_global = ""
@@ -383,7 +416,6 @@ with col_f:
             c_g1, c_g2 = st.columns(2)
             with c_g1: harga_global = st.number_input("Estimasi Harga Mulai (Rp)", min_value=0, value=30000, step=1000)
             with c_g2: promo_global = st.text_input("Promo Massal", placeholder="Potongan 10rb porsi / Beli 2 Gratis 1")
-        
         else:
             st.markdown("##### ➕ Input Item Manual Satu-per-Satu")
             with st.container():
@@ -410,7 +442,6 @@ with col_f:
                 if st.button("🗑️ Kosongkan Daftar Item", type="secondary", use_container_width=True):
                     st.session_state.daftar_produk_umkm = []
                     st.rerun()
-        # ----------------------------------------------------------------------
 
         st.write("---")
         foto_produk = st.file_uploader("Upload Foto Referensi", type=['png', 'jpg'], accept_multiple_files=True)
@@ -420,7 +451,7 @@ with col_f:
             for i, f in enumerate(foto_produk[:3]):
                 c1, c2 = st.columns([1, 2.5])
                 with c1: st.image(f, use_container_width=True)
-                with c2: foto_desc.append(st.text_input(f"Desc Foto {i+1}", key=f"f_{i}", label_visibility="collapsed", placeholder="Contoh: Tekstur saus"))
+                with c2: foto_desc.append(st.text_input(f"Desc Foto {i+1}", key=f"f_{i}", label_visibility="collapsed", placeholder="Contoh: Kemasan kotak"))
 
     st.markdown('<div class="step-label">🎯 Langkah 3: Strategi Platform</div>', unsafe_allow_html=True)
     with st.container(border=True):
@@ -441,7 +472,6 @@ with col_f:
             st.session_state.ai_review = None
             with st.spinner("AI sedang meracik copywriting..."):
                 img_bytes = [f.getvalue() for f in foto_produk] if foto_produk else []
-                # Mengirimkan seluruh variabel skenario promo baru ke backend generator
                 res = generate_ad_text_master(
                     kategori, brand_name, keywords, gaya, platform, market, mood, bg, subjek, img_bytes, 
                     get_elemen_wajib(kategori), mode_promo, nama_produk_global, harga_global, promo_global, 
@@ -451,7 +481,7 @@ with col_f:
                 st.session_state.main_txt, st.session_state.vis_prompt = txt, vis
                 st.session_state.last_p = {"nama": brand_name, "plat": platform}
 
-# --- KOLOM KANAN: OUTPUT & FORM MOKAP GFORM ---
+# --- KOLOM KANAN: OUTPUT & FORM REVISI FIRESTORE PANDAS ---
 with col_r:
     st.markdown('<div class="step-label">📱 Langkah 4: Copywriting & Evaluasi</div>', unsafe_allow_html=True)
     if st.session_state.main_txt:
@@ -476,6 +506,7 @@ with col_r:
             st.markdown('<div class="cost-badge">Estimasi Biaya API: ~$0.03</div>', unsafe_allow_html=True)
             if st.button("Render Imagen 3.0", key="btn_a", use_container_width=True):
                 with st.spinner("Merender Imagen via API murni..."):
+                    # FIX: Memanggil hanya dengan argument tunggal vis_edit
                     raw = generate_imagen_image(vis_edit)
                     st.session_state.img_mem["A"] = apply_dynamic_branding(raw, logo_file, posisi_logo) if raw else None
             if st.session_state.img_mem["A"]:
@@ -500,10 +531,11 @@ with col_r:
                 st.image(st.session_state.img_mem["C"], caption="Model C: Gemini Nano Banana")
 
         # ==============================================================================
-        # 📊 FORM MOCKUP (EVALUASI BAB 4 SKRIPSI)
+        # 📊 FORM EVALUASI DATA REAL-TIME CLOUD (FIX INDEX ORDER_BY ERROR)
         # ==============================================================================
         st.divider()
-        st.markdown('<div class="step-label">📊 Form Pendataan Hasil Evaluasi (Per Bidang)</div>', unsafe_allow_html=True)
+        st.markdown('<div class="step-label">📊 Form Pendataan Hasil Evaluasi Cloud</div>', unsafe_allow_html=True)
+        st.caption("Data di bawah ini tersimpan permanen di Google Cloud Firestore (Aman meskipun web di-refresh).")
         
         with st.form("gform_mokap", clear_on_submit=True):
             f_bidang = st.selectbox("Pilih Bidang Hasil Pengujian", ["Bidang Food & Beverages", "Bidang Fashion/Pakaian", "Bidang Jasa & Retail"])
@@ -511,31 +543,56 @@ with col_r:
             f_catatan = st.text_area("Catatan atau Evaluasi Kualitatif Kinerja Model")
             f_skor = st.slider("Skor Kelayakan Hasil (1 - 100)", 1, 100, 85)
             
-            submit_form = st.form_submit_button("📁 Simpan Data ke dalam Log Skripsi", use_container_width=True)
+            submit_form = st.form_submit_button("📁 Simpan Data Permanen ke Google Cloud", use_container_width=True)
             
             if submit_form:
                 new_entry = {
                     "Waktu": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                     "Bidang": f_bidang,
-                    "Nama Usaha": brand_name,
+                    "Nama Usaha": brand_name if brand_name else "Tanpa Nama",
                     "Platform Target": platform,
                     "Tester": f_tester,
                     "Catatan Evaluasi": f_catatan,
                     "Skor Kelayakan": f_skor
                 }
-                st.session_state.skripsi_data.append(new_entry)
-                st.toast("Data evaluasi berhasil direkam!", icon="💾")
+                if db:
+                    try:
+                        db.collection("evaluasi_skripsi").add(new_entry)
+                        st.toast("Data evaluasi berhasil dikunci di Google Cloud Database!", icon="💾")
+                    except Exception as e:
+                        st.error(f"Gagal simpan ke Cloud: {e}")
+                else:
+                    st.session_state.skripsi_data.append(new_entry)
+                    st.toast("Data disimpan sementara di mode lokal.", icon="💾")
 
-        if st.session_state.skripsi_data:
-            st.markdown("### 📋 Riwayat Log Data Terkumpul (Google Form Mockup)")
-            df_log = pd.DataFrame(st.session_state.skripsi_data)
+        # Tarik data dari Cloud Firestore
+        cloud_data = []
+        if db:
+            try:
+                # FIX INDEX: Mengambil mentah tanpa order_by untuk menghindari Index Missing Error di GCP Console
+                docs = db.collection("evaluasi_skripsi").stream()
+                cloud_data = [doc.to_dict() for doc in docs]
+            except Exception as e:
+                st.warning(f"Gagal memuat data cloud langsung, menggunakan data lokal: {e}")
+        
+        # Gabungkan data untuk ditabelkan ke Pandas DataFrame
+        final_log_list = cloud_data if db else st.session_state.skripsi_data
+
+        if final_log_list:
+            st.markdown("### 📋 Riwayat Log Data Terkumpul")
+            df_log = pd.DataFrame(final_log_list)
+            
+            # FIX PANDAS SORTING: Pengurutan data terbaru dipindah ke sisi mesin lokal via Pandas
+            if "Waktu" in df_log.columns:
+                df_log = df_log.sort_values(by="Waktu", ascending=False).reset_index(drop=True)
+                
             st.dataframe(df_log, use_container_width=True)
             
             csv_data = df_log.to_csv(index=False).encode('utf-8')
             st.download_button(
                 label="📥 Download Data Log Pengujian (.CSV)",
                 data=csv_data,
-                file_name="log_pengujian_skripsi_inamikro.csv",
+                file_name="log_pengujian_skripsi_cloud.csv",
                 mime="text/csv",
                 use_container_width=True
             )
