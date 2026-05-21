@@ -225,22 +225,24 @@ def generate_imagen_image(prompt_text):
     except Exception as e:
         st.error(f"Imagen Error: {e}")
         return None
-@st.cache_data(show_spinner=False)
+    # ==============================================================================
+# MODEL GENERATOR OPENAI (KEMBALI KE GPT IMAGE 2)
+# ==============================================================================
+# @st.cache_data(show_spinner=False)
 def generate_dalle_image(prompt_text):
     if not prompt_text: return None
     try:
         client = openai.OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
-        safe_prompt = prompt_text[:900] 
+        context_anchor = f"Commercial product advertisement photography for '{st.session_state.get('brand_name', 'UMKM')}' showing realistic products of {st.session_state.get('kategori', 'Product')}. Photorealistic, delicious look, appetizing style, no abstract 3D figures, no geometric sculptures, "
+        final_prompt = (context_anchor + prompt_text)[:900]
         
-        # MURNI HANYA MEMANGGIL gpt-image-2 SESUAI INSTRUKSI KEVIN
-        res = client.images.generate(model="gpt-image-2", prompt=safe_prompt, size="1024x1024", n=1)
+        # KEMBALI MENGGUNAKAN MESIN TERBARU OPENAI
+        res = client.images.generate(model="gpt-image-2", prompt=final_prompt, size="1024x1024", n=1)
+        
         if res.data[0].url: 
             return requests.get(res.data[0].url).content
-        if hasattr(res.data[0], 'b64_json') and res.data[0].b64_json: 
-            return base64.b64decode(res.data[0].b64_json)
-            
     except Exception as e:
-        st.error(f"Gagal total menghubungi OpenAI (gpt-image-2): {e}")
+        st.error(f"Gagal total menghubungi OpenAI (GPT Image 2): {e}")
         return None
 
 @st.cache_data(show_spinner=False)
