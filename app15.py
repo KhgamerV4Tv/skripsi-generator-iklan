@@ -301,24 +301,29 @@ def generate_imagen_image(prompt_text):
         st.error(f"Imagen Error: {e}")
         return None
 
-  # ==============================================================================
-# MODEL GENERATOR OPENAI (KEMBALI KE GPT IMAGE 2)
 # ==============================================================================
-# @st.cache_data(show_spinner=False)
+# MODEL GENERATOR OPENAI (GPT-IMAGE-2) - FIX BASE64 FORMAT
+# ==============================================================================
 def generate_dalle_image(prompt_text):
     if not prompt_text: return None
     try:
         client = openai.OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
         context_anchor = f"Commercial product advertisement photography for '{st.session_state.get('brand_name', 'UMKM')}' showing realistic products of {st.session_state.get('kategori', 'Product')}. Photorealistic, delicious look, appetizing style, no abstract 3D figures, no geometric sculptures, "
-        final_prompt = (context_anchor + prompt_text)[:900]
+        safe_prompt = (context_anchor + prompt_text)[:900] 
         
-        # KEMBALI MENGGUNAKAN MESIN TERBARU OPENAI
-        res = client.images.generate(model="gpt-image-2", prompt=final_prompt, size="1024x1024", n=1)
+        # Memanggil murni gpt-image-2 dengan tarif $0.05 per render
+        res = client.images.generate(model="gpt-image-2", prompt=safe_prompt, size="1024x1024", n=1)
         
-        if res.data[0].url: 
+        # Cek apakah responnya berupa URL (jika ada fallback)
+        if hasattr(res.data[0], 'url') and res.data[0].url: 
             return requests.get(res.data[0].url).content
+            
+        # FIX UTAMA KEVIN: Tangkap format data mentah b64_json bawaan gpt-image-2
+        if hasattr(res.data[0], 'b64_json') and res.data[0].b64_json: 
+            return base64.b64decode(res.data[0].b64_json)
+            
     except Exception as e:
-        st.error(f"Gagal total menghubungi OpenAI (GPT Image 2): {e}")
+        st.error(f"Gagal total menghubungi OpenAI (gpt-image-2): {e}")
         return None
 
 @st.cache_data(show_spinner=False)
