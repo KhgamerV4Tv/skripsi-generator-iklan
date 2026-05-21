@@ -135,23 +135,21 @@ if "daftar_produk_umkm" not in st.session_state:
 # ==============================================================================
 def load_gcp_credentials():
     from google.oauth2.service_account import Credentials
-    # JALUR UTAMA: Mendekripsi string Base64 yang anti-gagal parser TOML
-    if "GCP_SERVICE_ACCOUNT_BASE64" in st.secrets:
-        try:
-            # Mengonversi teks terkompresi kembali menjadi struktur kamus JSON asli di RAM runtime
-            decoded_bytes = base64.b64decode(st.secrets["GCP_SERVICE_ACCOUNT_BASE64"])
-            info = json.loads(decoded_bytes.decode("utf-8"))
-            return Credentials.from_service_account_info(info), info["project_id"]
-        except Exception as e:
-            st.error(f"Gagal mendekripsi GCP_SERVICE_ACCOUNT_BASE64: {e}")
-            
-    # Jalur Cadangan (JSON murni jika ada)
+    # Opsi Cadangan Utama: Membaca string teks JSON murni (Sangat direkomendasikan karena kebal error TOML)
     if "GCP_SERVICE_ACCOUNT_JSON" in st.secrets:
         try:
             info = json.loads(st.secrets["GCP_SERVICE_ACCOUNT_JSON"])
-            return Credentials.from_service_account_info(info), info["project_id"]
+            return Credentials.from_service_account_info(info), info["careful-ensign-477104-p5"]
         except Exception as e:
             st.error(f"Gagal memproses GCP_SERVICE_ACCOUNT_JSON: {e}")
+            
+    # Opsi Cadangan Kedua: Membaca format blok kamus TOML bawaan Streamlit biasa
+    if "GCP_SERVICE_ACCOUNT" in st.secrets:
+        try:
+            info = dict(st.secrets["GCP_SERVICE_ACCOUNT"])
+            return Credentials.from_service_account_info(info), info["careful-ensign-477104-p5"]
+        except Exception as e:
+            st.error(f"Gagal memproses GCP_SERVICE_ACCOUNT TOML: {e}")
             
     return None, None
 
