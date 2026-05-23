@@ -422,14 +422,8 @@ with col_r:
     st.markdown('<div class="step-label">📱 Langkah 4: Copywriting Hasil AI</div>', unsafe_allow_html=True)
     if st.session_state.main_txt:
         with st.container(border=True):
-            st.info("💡 Anda bisa mengetik langsung di kotak ini untuk mengedit teks secara manual.")
-            # Editable Text Area untuk kenyamanan pengguna
-            st.session_state.main_txt = st.text_area(
-                "Teks Copywriting", 
-                value=st.session_state.main_txt, 
-                height=320, 
-                label_visibility="collapsed"
-            )
+            # KEMBALI MENGGUNAKAN MARKDOWN AGAR RAPI, BOLD, DAN EMOJI MUNCUL SEMPURNA
+            st.markdown(st.session_state.main_txt)
             
         st.divider()
         st.markdown('<div class="step-label">🎨 Langkah 5: Render Visual Final</div>', unsafe_allow_html=True)
