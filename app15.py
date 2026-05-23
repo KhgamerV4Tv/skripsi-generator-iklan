@@ -422,8 +422,21 @@ with col_r:
     st.markdown('<div class="step-label">📱 Langkah 4: Copywriting Hasil AI</div>', unsafe_allow_html=True)
     if st.session_state.main_txt:
         with st.container(border=True):
-            # KEMBALI MENGGUNAKAN MARKDOWN AGAR RAPI, BOLD, DAN EMOJI MUNCUL SEMPURNA
-            st.markdown(st.session_state.main_txt)
+            # FITUR 2-WAY: Sakelar untuk mengubah mode tampilan
+            edit_mode = st.toggle("✏️ Mode Edit Manual")
+            
+            if edit_mode:
+                # Jika sakelar ON: Munculkan kotak ketik
+                st.info("💡 Silakan ketik/edit teks di bawah ini. Matikan sakelar untuk melihat hasil rapinya kembali.")
+                st.session_state.main_txt = st.text_area(
+                    "Edit Teks Copywriting", 
+                    value=st.session_state.main_txt, 
+                    height=350, 
+                    label_visibility="collapsed"
+                )
+            else:
+                # Jika sakelar OFF: Tampilkan versi elegan (Markdown)
+                st.markdown(st.session_state.main_txt)
             
         st.divider()
         st.markdown('<div class="step-label">🎨 Langkah 5: Render Visual Final</div>', unsafe_allow_html=True)
