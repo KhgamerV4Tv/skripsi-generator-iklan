@@ -608,8 +608,8 @@ with col_r:
         
         with st.form("gform_mokap", clear_on_submit=True):
             f_bidang = st.selectbox("Pilih Bidang Hasil Pengujian", ["Bidang Food & Beverages", "Bidang Fashion/Pakaian", "Bidang Jasa & Retail"])
-            f_tester = st.text_input("Nama Penilai / Tester", value="Dosen Pembimbing 2")
-            f_catatan = st.text_area("Catatan atau Evaluasi Kualitatif Kinerja Model")
+            f_tester = st.text_input("Nama Penilai / Tester", value="nama umkm")
+            f_catatan = st.text_area("Catatan atau Evaluasi Kualitatif Kinerja Model dan feedback")
             f_skor = st.slider("Skor Kelayakan Hasil (1 - 100)", 1, 100, 85)
             
             submit_form = st.form_submit_button("📁 Simpan Data Permanen ke Google Cloud", use_container_width=True)
