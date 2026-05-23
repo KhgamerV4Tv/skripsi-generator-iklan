@@ -6,10 +6,10 @@ import base64
 import requests
 import openai
 import pandas as pd
-import json
+import json # Ditambahkan untuk memproses string JSON rahasia
 from datetime import datetime
 from pathlib import Path
-from PIL import Image
+from PIL import Image, ImageEnhance, ImageDraw, ImageFont
 import google.generativeai as genai
 
 # ==============================================================================
@@ -42,7 +42,7 @@ st.markdown("""
     
     div[data-testid="stVerticalBlockBorderWithFormatting"] {
         background-color: transparent; border: 1px solid #e2e8f0 !important;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         border-radius: 12px !important; padding: 1.5rem !important;
     }
     
@@ -60,6 +60,13 @@ st.markdown("""
         font-size: 0.8rem; color: #0369a1; margin: 4px 4px 10px 0; 
         display: inline-block; font-weight: 600; border: 1px solid #bae6fd;
     }
+    
+    .cost-badge { 
+        background: #fee2e2; border-radius: 6px; padding: 0.4rem 0.8rem; 
+        font-size: 0.8rem; color: #991b1b; display: inline-block; 
+        font-weight: 600; margin-bottom: 0.8rem; border: 1px solid #fca5a5;
+    }
+    
     .master-prompt-badge { 
         background: #f3e8ff; border-radius: 6px; padding: 0.4rem 0.8rem; 
         font-size: 0.8rem; color: #6b21a8; display: inline-block; 
@@ -76,7 +83,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==============================================================================
-# DATA MASTER PROMPT & DATA KBLI UMKM (DIPERLUAS)
+# DATA MASTER PROMPT & DATA KBLI UMKM
 # ==============================================================================
 MASTER_PROMPT_PATH = Path(__file__).parent / "master_prompt_inamikro.md"
 
@@ -100,7 +107,7 @@ KBLI_DATA = {
     "47721 - Perdagangan Eceran Kosmetik & Skincare": {"desc": "Usaha penjualan produk kecantikan, makeup, dan perawatan kulit.", "tipe": "fashion"},
     "32990 - Industri Kerajinan Tangan (Kriya/Aksesoris)": {"desc": "Usaha pembuatan kerajinan, aksesoris, atau souvenir.", "tipe": "fashion"},
     "96012 - Jasa Penatu/Laundry": {"desc": "Usaha jasa pencucian pakaian.", "tipe": "jasa"},
-    "96020 - Jasa Salon & Perawatan Kecantikan": {"desc": "Usaha layanan pangkas rambut, kosmetik, dan salon.", "tipe": "jasa"}
+    "96020 - Jasa Salon & Perawatan Kecantikan": {"desc": "Usaha layanan pangkas rambut, makeup artist, dan perawatan tubuh.", "tipe": "jasa"}
 }
 
 BROSUR_ELEMEN = {
@@ -127,29 +134,42 @@ if "daftar_produk_umkm" not in st.session_state:
     st.session_state.daftar_produk_umkm = []
 
 # ==============================================================================
-# FUNGSI PENANGANAN KREDENSIAL GCP & FIRESTORE
+# FUNGSI PENANGANAN KREDENSIAL GCP (KEBAL HURUF BESAR/KECIL)
 # ==============================================================================
 def load_gcp_credentials():
     from google.oauth2.service_account import Credentials
+    
+    # Cek semua kemungkinan nama yang ada di secrets kamu
     secret_keys = st.secrets.keys()
-    target_key = "gcp_service_account" if "gcp_service_account" in secret_keys else "GCP_SERVICE_ACCOUNT" if "GCP_SERVICE_ACCOUNT" in secret_keys else None
+    target_key = None
+    
+    if "gcp_service_account" in secret_keys:
+        target_key = "gcp_service_account"
+    elif "GCP_SERVICE_ACCOUNT" in secret_keys:
+        target_key = "GCP_SERVICE_ACCOUNT"
+        
     if target_key:
         try:
             info = dict(st.secrets[target_key])
             return Credentials.from_service_account_info(info), info["project_id"]
-        except Exception: pass
+        except Exception as e:
+            st.error(f"Gagal memproses kredensial GCP: {e}")
+            
     return None, None
 
 def get_firestore_client():
     try:
         from google.cloud import firestore
         creds, project_id = load_gcp_credentials()
-        if creds and project_id: return firestore.Client(project=project_id, credentials=creds)
-    except Exception: pass
-    return None
+        if creds and project_id:
+            return firestore.Client(project=project_id, credentials=creds)
+        return None
+    except Exception as e:
+        # Hapus st.error agar tidak muncul pesan merah mengganggu jika gagal
+        return None
 
 # ==============================================================================
-# ENGINE GENERATOR TEKS GEMINI SDK
+# ENGINE GENERATOR TEKS MURNI GOOGLE GEMINI SDK
 # ==============================================================================
 class GeminiStudioWrapper:
     def __init__(self, model_name, temperature):
@@ -159,7 +179,8 @@ class GeminiStudioWrapper:
     def invoke(self, messages):
         try:
             genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-            model = genai.GenerativeModel(self.model_name, generation_config=genai.types.GenerationConfig(temperature=self.temperature))
+            generation_config = genai.types.GenerationConfig(temperature=self.temperature)
+            model = genai.GenerativeModel(self.model_name, generation_config=generation_config)
             
             contents = []
             msg = messages[0] if isinstance(messages, list) else messages
@@ -169,7 +190,8 @@ class GeminiStudioWrapper:
                     if part.get("type") == "text": contents.append(part.get("text", ""))
                     elif part.get("type") == "image_url":
                         b64_data = part["image_url"]["url"].split(",")[1]
-                        contents.append(Image.open(io.BytesIO(base64.b64decode(b64_data))))
+                        img = Image.open(io.BytesIO(base64.b64decode(b64_data)))
+                        contents.append(img)
             else:
                 contents.append(str(msg.content if hasattr(msg, 'content') else msg))
 
@@ -183,6 +205,7 @@ class GeminiStudioWrapper:
             return ErrorResponse()
 
 llm_generator = GeminiStudioWrapper(model_name="gemini-2.5-pro", temperature=0.3)
+llm_evaluator = GeminiStudioWrapper(model_name="gemini-2.5-pro", temperature=0.1)
 
 # ==============================================================================
 # PARSING & PROMPT BUILDING
@@ -207,7 +230,7 @@ def build_context_block(kategori, brand_name, keywords_list, gaya, platform, mar
     produk_block = ""
     if mode_promo == "Diskon Sama untuk Semua (Global)":
         promo_text = f" (Diberikan Promo Global: {promo_global})" if promo_global else " (Tanpa Promo)"
-        produk_block = f"\n  - Nama Produk: {nama_produk_global}\n  - Harga: Rp {harga_global:,}{promo_text}"
+        produk_block = f"\n  - Nama Produk/Menu: {nama_produk_global}\n  - Estimasi Harga Utama: Rp {harga_global:,}{promo_text}\n  - Catatan: Promo ini berlaku pukul rata untuk seluruh komoditas produk tersebut."
     else:
         for idx, p in enumerate(list_produk):
             p_promo = f" (Promo: {p['promo']})" if p['promo'] else " (Tanpa Promo)"
@@ -231,7 +254,7 @@ def build_context_block(kategori, brand_name, keywords_list, gaya, platform, mar
 {elemen_str}
 
 === PERINTAH TEGAS GENERASI VISUAL ===
-Jangan membuat gambar abstrak atau patung 3D geometris! Ide Visual harus berupa konsep fotografi komersial (Commercial Product Photography) nyata yang menampilkan wujud asli produk '{brand_name}' secara lezat/menarik, rapi, dan sesuai dengan suasana latar belakang yang dipilih.
+Jangan membuat gambar abstrak atau patung 3D geometris! Ide Visual harus berupa konsep fotografi komersial (Commercial Product Photography) nyata yang menampilkan wujud asli hidangan/produk '{brand_name}' secara lezat, menggugah selera, rapi, dan siap saji/pakai sesuai dengan suasana latar belakang yang dipilih.
 """
 
 @st.cache_data(show_spinner=False)
@@ -249,45 +272,92 @@ def generate_ad_text_master(kategori, brand_name, keywords_list, gaya, platform,
     return llm_generator.invoke([DummyMsg(parts)]).content
 
 @st.cache_data(show_spinner=False)
-def generate_ad_revision_master(main_txt, vis_prompt, revisi_input):
-    old_output = f"{main_txt}\n\n**Ide Visual:**\n{vis_prompt}"
-    prompt = f"""Kamu adalah Agen Pakar Marketing UMKM.
-    
-=== HASIL IKLAN SEBELUMNYA ===
-{old_output}
-
-=== INSTRUKSI REVISI DARI PENGGUNA ===
-"{revisi_input}"
-
-TUGAS:
-Lakukan revisi HANYA pada bagian yang diminta. Jangan merombak total gaya bahasa yang sudah ada. 
-Pastikan output akhir TETAP mengikuti format baku (ada Headline, Caption, Hashtags, dan bagian **Ide Visual:** di paling bawah untuk instruksi gambar).
-"""
+def evaluate_ad_quality(brand_name, platform, generated_ad):
+    prompt = f"Evaluasi iklan {brand_name} untuk {platform}. Berikan skor /100 untuk Relevansi, Target, dan Copywriting. Tampilkan di dalam tabel format Markdown.\n\nIKLAN:\n{generated_ad}"
     class DummyMsg:
         def __init__(self, content): self.content = content
-    return llm_generator.invoke([DummyMsg(prompt)]).content
+    return llm_evaluator.invoke([DummyMsg(prompt)]).content
 
 # ==============================================================================
-# MODEL GENERATOR OPENAI (GPT-IMAGE-2 / DALL-E)
+# MODEL GENERATOR VISUAL DENGAN PROMPT ANCHORING (FIX KONEKSI SINKRONISASI)
+# ==============================================================================
+@st.cache_data(show_spinner=False)
+def generate_imagen_image(prompt_text):
+    if not prompt_text: return None
+    try:
+        from vertexai.vision_models import ImageGenerationModel
+        import vertexai
+        creds, project_id = load_gcp_credentials()
+        if not creds or not project_id:
+            st.error("Secrets GCP Kredensial tidak terdeteksi oleh aplikasi!")
+            return None
+            
+        vertexai.init(project=project_id, location="us-central1", credentials=creds)
+        model = ImageGenerationModel.from_pretrained("imagen-3.0-generate-002")
+        
+        context_anchor = f"Commercial product photography for brand '{st.session_state.get('brand_name', 'UMKM')}' with category {st.session_state.get('kategori', 'Product')}. Clean and realistic presentation, no abstract elements, no 3D sculptures, highly relevant to the food/item menu, "
+        final_prompt = context_anchor + prompt_text
+        
+        response = model.generate_images(prompt=final_prompt, number_of_images=1, aspect_ratio="1:1")
+        return response.images[0]._image_bytes
+    except Exception as e:
+        st.error(f"Imagen Error: {e}")
+        return None
+
+# ==============================================================================
+# MODEL GENERATOR OPENAI (GPT-IMAGE-2) - FIX BASE64 FORMAT
 # ==============================================================================
 def generate_dalle_image(prompt_text):
     if not prompt_text: return None
     try:
         client = openai.OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
-        context_anchor = f"Commercial product advertisement photography for '{st.session_state.get('brand_name', 'UMKM')}' showing realistic products of {st.session_state.get('kategori', 'Product')}. Photorealistic, high quality, appetizing style, no abstract 3D figures, no geometric sculptures, "
+        context_anchor = f"Commercial product advertisement photography for '{st.session_state.get('brand_name', 'UMKM')}' showing realistic products of {st.session_state.get('kategori', 'Product')}. Photorealistic, delicious look, appetizing style, no abstract 3D figures, no geometric sculptures, "
         safe_prompt = (context_anchor + prompt_text)[:900] 
         
+        # Memanggil murni gpt-image-2 dengan tarif $0.05 per render
         res = client.images.generate(model="gpt-image-2", prompt=safe_prompt, size="1024x1024", n=1)
+        
+        # Cek apakah responnya berupa URL (jika ada fallback)
         if hasattr(res.data[0], 'url') and res.data[0].url: 
             return requests.get(res.data[0].url).content
+            
+        # FIX UTAMA KEVIN: Tangkap format data mentah b64_json bawaan gpt-image-2
         if hasattr(res.data[0], 'b64_json') and res.data[0].b64_json: 
             return base64.b64decode(res.data[0].b64_json)
+            
     except Exception as e:
-        st.error(f"Gagal memproses GPT Image: {e}")
+        st.error(f"Gagal total menghubungi OpenAI (gpt-image-2): {e}")
         return None
 
+@st.cache_data(show_spinner=False)
+def generate_gemini_flash_image(prompt_text):
+    if not prompt_text: return None
+    context_anchor = f"Realistic commercial marketing photography for '{st.session_state.get('brand_name', 'UMKM')}' matching the promotional text. Clean setup, sharp focus on the real items, strictly no abstract shape or complex 3D statues, "
+    final_prompt = (context_anchor + prompt_text)[:900]
+    try:
+        genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+        model = genai.GenerativeModel('models/nano-banana-2')
+        res = model.generate_content(final_prompt)
+        for cand in res.candidates:
+            for part in cand.content.parts:
+                if hasattr(part, 'inline_data') and part.inline_data: return part.inline_data.data
+    except Exception:
+        try:
+            from vertexai.vision_models import ImageGenerationModel
+            import vertexai
+            creds, project_id = load_gcp_credentials()
+            if creds and project_id:
+                vertexai.init(project=project_id, location="us-central1", credentials=creds)
+            else:
+                vertexai.init(project="careful-ensign-477104-p5", location="us-central1")
+            model = ImageGenerationModel.from_pretrained("imagen-3.0-fast-generate-001")
+            res_vertex = model.generate_images(prompt=final_prompt, number_of_images=1, aspect_ratio="1:1")
+            return res_vertex.images[0]._image_bytes
+        except Exception:
+            return None
+
 # ==============================================================================
-# POST-PROCESSING WATERMARK
+# POST-PROCESSING
 # ==============================================================================
 def apply_dynamic_branding(main_bytes, logo_file, posisi):
     if not main_bytes or not logo_file: return main_bytes
@@ -312,22 +382,18 @@ def apply_dynamic_branding(main_bytes, logo_file, posisi):
     except Exception: return main_bytes
 
 # ==============================================================================
-# INITIALIZE SESSION STATE
+# USER INTERFACE LAYOUT (KOLOM KIRI & KANAN)
 # ==============================================================================
-for k in ['main_txt', 'vis_prompt', 'last_p', 'img_mem', 'chat_history']:
+for k in ['main_txt', 'vis_prompt', 'ai_review', 'last_p', 'img_mem']:
     if k not in st.session_state: st.session_state[k] = None
-if st.session_state.img_mem is None: st.session_state.img_mem = {"A": None}
-if st.session_state.chat_history is None: st.session_state.chat_history = []
+if st.session_state.img_mem is None: st.session_state.img_mem = {"A": None, "B": None, "C": None}
 
-# ==============================================================================
-# USER INTERFACE LAYOUT
-# ==============================================================================
 col_f, col_r = st.columns([1, 1.35], gap="large")
 
 # --- KOLOM KIRI: INPUT DATA ---
 with col_f:
     db = get_firestore_client()
-    db_status = "✅ Database Cloud Terkoneksi" if db else "⚠️ Mode Lokal"
+    db_status = "✅ Database Cloud Firestore Terkoneksi" if db else "⚠️ Firestore Mode Lokal Aktif"
     st.markdown(f'<div class="master-prompt-badge">🧠 {db_status}</div>', unsafe_allow_html=True)
 
     st.markdown('<div class="step-label">📋 Langkah 1: Identitas & Branding UMKM</div>', unsafe_allow_html=True)
@@ -349,6 +415,7 @@ with col_f:
         kategori = st.selectbox("Kategori Usaha", list(KBLI_DATA.keys()))
         st.session_state['kategori'] = kategori
         st.markdown(f"<div class='kbli-desc'>📌 <b>Sektor:</b> {KBLI_DATA[kategori]['desc']}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='elemen-box'><b>✅ Elemen Wajib Brosur:</b> {', '.join(get_elemen_wajib(kategori))}</div>", unsafe_allow_html=True)
         
         st.write("---")
         mode_promo = st.radio("Metode Penginputan Harga & Promo:", ["Diskon Sama untuk Semua (Global)", "Diskon Berbeda Per Item (Input Satu-Satu)"])
@@ -371,13 +438,22 @@ with col_f:
                 with c_p2: item_harga = st.number_input("Harga Item (Rp)", min_value=0, value=15000, step=1000, key="input_item_harga")
                 with c_p3: item_promo = st.text_input("Potongan/Promo", placeholder="Diskon 10rb", key="input_item_promo")
                 
-                if st.button("➕ Tambah Item", use_container_width=True):
+                if st.button("➕ Tambah Item ke Daftar", use_container_width=True):
                     if item_nama:
-                        st.session_state.daftar_produk_umkm.append({"nama": item_nama, "harga": item_harga, "promo": item_promo})
+                        st.session_state.daftar_produk_umkm.append({
+                            "nama": item_nama,
+                            "harga": item_harga,
+                            "promo": item_promo
+                        })
                         st.toast(f"{item_nama} ditambahkan!", icon="📝")
+                    else:
+                        st.warning("Nama item wajib diisi sebelum klik tambah.")
+
             if st.session_state.daftar_produk_umkm:
-                st.dataframe(pd.DataFrame(st.session_state.daftar_produk_umkm), use_container_width=True)
-                if st.button("🗑️ Kosongkan Daftar Item", type="secondary"): 
+                st.markdown("**Daftar Item Terdaftar Saat Ini:**")
+                df_curr_prod = pd.DataFrame(st.session_state.daftar_produk_umkm)
+                st.dataframe(df_curr_prod, use_container_width=True)
+                if st.button("🗑️ Kosongkan Daftar Item", type="secondary", use_container_width=True):
                     st.session_state.daftar_produk_umkm = []
                     st.rerun()
 
@@ -389,7 +465,7 @@ with col_f:
             for i, f in enumerate(foto_produk[:3]):
                 c1, c2 = st.columns([1, 2.5])
                 with c1: st.image(f, use_container_width=True)
-                with c2: foto_desc.append(st.text_input(f"Desc Foto {i+1}", key=f"f_{i}", label_visibility="collapsed"))
+                with c2: foto_desc.append(st.text_input(f"Desc Foto {i+1}", key=f"f_{i}", label_visibility="collapsed", placeholder="Contoh: Kemasan kotak"))
 
     st.markdown('<div class="step-label">🎯 Langkah 3: Strategi Platform</div>', unsafe_allow_html=True)
     with st.container(border=True):
@@ -403,9 +479,11 @@ with col_f:
     if st.button("🚀 GENERATE IKLAN", type="primary", use_container_width=True):
         if not brand_name: 
             st.warning("Isi nama brand/usaha dulu!")
+        elif mode_promo == "Diskon Berbeda Per Item (Input Satu-Satu)" and not st.session_state.daftar_produk_umkm:
+            st.warning("Daftar item produk kosong! Tambahkan minimal 1 item produk atau pilih mode Diskon Global.")
         else:
-            st.session_state.img_mem = {"A": None}
-            st.session_state.chat_history = [] # Reset riwayat chat untuk generate baru
+            st.session_state.img_mem = {"A": None, "B": None, "C": None}
+            st.session_state.ai_review = None
             with st.spinner("AI sedang meracik copywriting..."):
                 img_bytes = [f.getvalue() for f in foto_produk] if foto_produk else []
                 res = generate_ad_text_master(
@@ -417,40 +495,42 @@ with col_f:
                 st.session_state.main_txt, st.session_state.vis_prompt = txt, vis
                 st.session_state.last_p = {"nama": brand_name, "plat": platform}
 
-# --- KOLOM KANAN: OUTPUT & REVISI ---
+# --- KOLOM KANAN: OUTPUT & FORM REVISI FIRESTORE PANDAS ---
 with col_r:
-    st.markdown('<div class="step-label">📱 Langkah 4: Copywriting Hasil AI</div>', unsafe_allow_html=True)
+    st.markdown('<div class="step-label">📱 Langkah 4: Copywriting & Evaluasi</div>', unsafe_allow_html=True)
     if st.session_state.main_txt:
         with st.container(border=True):
-            st.info("💡 Anda bisa mengetik langsung di kotak ini untuk mengedit teks secara manual.")
-            # Editable Text Area untuk kenyamanan pengguna
-            st.session_state.main_txt = st.text_area(
-                "Teks Copywriting", 
-                value=st.session_state.main_txt, 
-                height=320, 
-                label_visibility="collapsed"
-            )
+            st.markdown(st.session_state.main_txt)
             
+            if st.button("🤖 Langkah 6: Review by Expert", use_container_width=True):
+                with st.spinner("Juri mengevaluasi..."):
+                    p = st.session_state.last_p
+                    st.session_state.ai_review = evaluate_ad_quality(p["nama"], p["plat"], st.session_state.main_txt)
+        
+        if st.session_state.ai_review:
+            with st.container(border=True): st.info(st.session_state.ai_review)
+        
+
         st.divider()
         st.markdown('<div class="step-label">🎨 Langkah 5: Render Visual Final</div>', unsafe_allow_html=True)
         
+        # Sembunyikan prompt yang rumit di dalam expander agar UMKM tidak pusing
         with st.expander("⚙️ Lihat/Edit Instruksi AI (Opsional)"):
-            st.session_state.vis_prompt = st.text_area(
-                "Instruksi Prompt Visual", 
-                value=st.session_state.vis_prompt, 
-                height=80, 
-                label_visibility="collapsed"
-            )
+            vis_edit = st.text_area("Instruksi Prompt Visual", value=st.session_state.vis_prompt, height=80, label_visibility="collapsed")
         
-        st.info("💡 Sistem menggunakan AI GPT Image 2 (Dioptimalkan untuk teks promo dan poster komersial).")
+        st.info("💡 Sistem akan merender gambar menggunakan model AI Cerdas (GPT Image 2) yang dioptimalkan untuk poster komersial.")
+        
+        # SATU TOMBOL UTAMA UNTUK UMKM (Menggunakan GPT Image 2 di belakang layar)
         if st.button("✨ Render Foto Studio (Otomatis)", type="primary", use_container_width=True):
-            with st.spinner("📸 Sedang di studio AI... Merender gambar (sekitar 10 detik)..."):
-                raw = generate_dalle_image(st.session_state.vis_prompt)
+            with st.spinner("📸 Sedang di studio AI... Merender gambar premium (sekitar 10-15 detik)..."):
+                raw = generate_dalle_image(vis_edit) # <-- SUDAH DIGANTI KE GPT
                 st.session_state.img_mem["A"] = apply_dynamic_branding(raw, logo_file, posisi_logo) if raw else None
                 
         if st.session_state.img_mem["A"]:
             st.success("✅ Gambar berhasil dibuat!")
-            st.image(st.session_state.img_mem["A"], caption="Hasil Render Final Inamikro")
+            st.image(st.session_state.img_mem["A"], caption="Hasil Render Final Inamikro Ad Generator")
+            
+            # Tombol Download
             st.download_button(
                 label="⬇️ Download Gambar Resolusi Tinggi", 
                 data=st.session_state.img_mem["A"], 
@@ -458,68 +538,136 @@ with col_r:
                 mime="image/png", 
                 use_container_width=True
             )
-
-        # =========================================================
-        # 💬 LANGKAH 6: CHATBOT REVISI AI
-        # =========================================================
-        st.divider()
-        st.markdown('<div class="step-label">💬 Langkah 6: Asisten Revisi AI (Otomatis)</div>', unsafe_allow_html=True)
-        st.caption("Kurang pas? Ketik perintah di bawah (misal: 'Tambahkan nomor WA 08123', 'Tambahkan tulisan Buy 1 Get 1 di gambar').")
+        # buat imagen3.0
+        # st.divider()
+        # st.markdown('<div class="step-label">🎨 Langkah 5: Render Visual Final</div>', unsafe_allow_html=True)
         
-        for msg in st.session_state.chat_history:
-            with st.chat_message(msg["role"]): st.markdown(msg["content"])
+        # # Sembunyikan prompt yang rumit di dalam expander agar UMKM tidak pusing, 
+        # # tapi tetap bisa diedit kalau mereka mau.
+        # with st.expander("⚙️ Lihat/Edit Instruksi AI (Opsional)"):
+        #     vis_edit = st.text_area("Instruksi Prompt Visual", value=st.session_state.vis_prompt, height=80, label_visibility="collapsed")
+        
+        # st.info("💡 Sistem akan merender gambar menggunakan model AI Fotografi Komersial resolusi tinggi untuk hasil maksimal.")
+        
+        # # SATU TOMBOL UTAMA UNTUK UMKM (Menggunakan Imagen 3.0 di belakang layar)
+        # if st.button("✨ Render Foto Studio (Otomatis)", type="primary", use_container_width=True):
+        #     with st.spinner("📸 Sedang di studio AI... Merender gambar premium (sekitar 10-15 detik)..."):
+        #         raw = generate_imagen_image(vis_edit)
+        #         st.session_state.img_mem["A"] = apply_dynamic_branding(raw, logo_file, posisi_logo) if raw else None
+                
+        # if st.session_state.img_mem["A"]:
+        #     st.success("✅ Gambar berhasil dibuat!")
+        #     st.image(st.session_state.img_mem["A"], caption="Hasil Render Final Inamikro Ad Generator")
+            
+        #     # Tombol Download
+        #     st.download_button(
+        #         label="⬇️ Download Gambar Resolusi Tinggi", 
+        #         data=st.session_state.img_mem["A"], 
+        #         file_name=f"promo_{brand_name.replace(' ', '_') if brand_name else 'umkm'}.png", 
+        #         mime="image/png", 
+        #         use_container_width=True
+        #     )
 
-        revisi_input = st.chat_input("Ketik instruksi revisi di sini...")
-        if revisi_input:
-            st.session_state.chat_history.append({"role": "user", "content": revisi_input})
-            with st.spinner("🧠 AI sedang merevisi naskah & visual..."):
-                new_raw = generate_ad_revision_master(st.session_state.main_txt, st.session_state.vis_prompt, revisi_input)
-                new_vis, new_txt = parse_output_for_image(new_raw)
-                
-                st.session_state.main_txt = new_txt
-                st.session_state.vis_prompt = new_vis
-                st.session_state.img_mem["A"] = None # Reset gambar lama
-                
-                st.session_state.chat_history.append({"role": "assistant", "content": "✅ Revisi selesai! Hasil teks di **Langkah 4** dan instruksi gambar di **Langkah 5** sudah saya perbarui. Silakan Render Ulang gambarnya."})
-                st.rerun()
+        # st.divider()
+        # st.markdown('<div class="step-label">🎨 Langkah 5: Render Visual (Komparasi Skripsi)</div>', unsafe_allow_html=True)
+        # vis_edit = st.text_area("Instruksi Prompt Visual", value=st.session_state.vis_prompt, height=80)
+        
+        # t_imgn, t_dalle, t_gmn = st.tabs(["🖼️ Imagen 3.0", "🎨 GPT Image 2", "⚡ Gemini Flash"])
+        
+        # with t_imgn:
+        #     st.markdown('<div class="cost-badge">Estimasi Biaya API: ~$0.03</div>', unsafe_allow_html=True)
+        #     if st.button("Render Imagen 3.0", key="btn_a", use_container_width=True):
+        #         with st.spinner("Merender Imagen via API murni..."):
+        #             # FIX: Memanggil hanya dengan argument tunggal vis_edit
+        #             raw = generate_imagen_image(vis_edit)
+        #             st.session_state.img_mem["A"] = apply_dynamic_branding(raw, logo_file, posisi_logo) if raw else None
+        #     if st.session_state.img_mem["A"]:
+        #         st.image(st.session_state.img_mem["A"], caption="Model A: Imagen 3.0")
+
+        # with t_dalle:
+        #     st.markdown('<div class="cost-badge">Estimasi Biaya API: ~$0.05</div>', unsafe_allow_html=True)
+        #     if st.button("Render GPT/DALL-E", key="btn_b", use_container_width=True):
+        #         with st.spinner("Merender via OpenAI..."):
+        #             raw = generate_dalle_image(vis_edit)
+        #             st.session_state.img_mem["B"] = apply_dynamic_branding(raw, logo_file, posisi_logo) if raw else None
+        #     if st.session_state.img_mem["B"]:
+        #         st.image(st.session_state.img_mem["B"], caption="Model B: GPT Image")
+
+        # with t_gmn:
+        #     st.markdown('<div class="cost-badge">Estimasi Biaya API: Gratis</div>', unsafe_allow_html=True)
+        #     if st.button("Render Nano Banana 2", key="btn_c", use_container_width=True):
+        #         with st.spinner("Merender Gambar..."):
+        #             raw = generate_gemini_flash_image(vis_edit)
+        #             st.session_state.img_mem["C"] = apply_dynamic_branding(raw, logo_file, posisi_logo) if raw else None
+        #     if st.session_state.img_mem["C"]:
+        #         st.image(st.session_state.img_mem["C"], caption="Model C: Gemini Nano Banana")
 
         # ==============================================================================
-        # 📊 FORM EVALUASI & ADMIN LOG (TERSEMBUNYI)
+        # 📊 FORM EVALUASI DATA REAL-TIME CLOUD (FIX INDEX ORDER_BY ERROR)
         # ==============================================================================
         st.divider()
-        st.markdown('<div class="step-label">📊 Form Evaluasi (Untuk Dosen/Penguji)</div>', unsafe_allow_html=True)
+        st.markdown('<div class="step-label">📊 Form Pendataan Hasil Evaluasi Cloud</div>', unsafe_allow_html=True)
+        st.caption("Data di bawah ini tersimpan permanen di Google Cloud Firestore (Aman meskipun web di-refresh).")
+        
         with st.form("gform_mokap", clear_on_submit=True):
-            f_bidang = st.selectbox("Bidang Hasil Pengujian", ["Bidang Food & Beverages", "Bidang Fashion", "Bidang Jasa"])
-            f_tester = st.text_input("Nama Penilai", value="Dosen Pembimbing")
-            f_catatan = st.text_area("Catatan Evaluasi")
+            f_bidang = st.selectbox("Pilih Bidang Hasil Pengujian", ["Bidang Food & Beverages", "Bidang Fashion/Pakaian", "Bidang Jasa & Retail"])
+            f_tester = st.text_input("Nama Penilai / Tester", value="nama umkm")
+            f_catatan = st.text_area("Catatan atau Evaluasi Kualitatif Kinerja Model dan feedback")
             f_skor = st.slider("Skor Kelayakan Hasil (1 - 100)", 1, 100, 85)
-            if st.form_submit_button("📁 Simpan Data Permanen", use_container_width=True):
-                new_entry = {"Waktu": datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "Bidang": f_bidang, "Nama Usaha": brand_name, "Platform Target": st.session_state.last_p["plat"] if st.session_state.last_p else "N/A", "Tester": f_tester, "Catatan Evaluasi": f_catatan, "Skor Kelayakan": f_skor}
+            
+            submit_form = st.form_submit_button("📁 Simpan Data Permanen ke Google Cloud", use_container_width=True)
+            
+            if submit_form:
+                new_entry = {
+                    "Waktu": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "Bidang": f_bidang,
+                    "Nama Usaha": brand_name if brand_name else "Tanpa Nama",
+                    "Platform Target": platform,
+                    "Tester": f_tester,
+                    "Catatan Evaluasi": f_catatan,
+                    "Skor Kelayakan": f_skor
+                }
                 if db:
-                    try: 
+                    try:
                         db.collection("evaluasi_skripsi").add(new_entry)
-                        st.toast("Tersimpan di Cloud!", icon="💾")
-                    except Exception as e: st.error(f"Gagal: {e}")
+                        st.toast("Data evaluasi berhasil dikunci di Google Cloud Database!", icon="💾")
+                    except Exception as e:
+                        st.error(f"Gagal simpan ke Cloud: {e}")
                 else:
                     st.session_state.skripsi_data.append(new_entry)
-                    st.toast("Tersimpan lokal.", icon="💾")
+                    st.toast("Data disimpan sementara di mode lokal.", icon="💾")
 
-        # Admin Panel berpelindung PIN
+        # Tarik data dari Cloud Firestore
         cloud_data = []
         if db:
-            try: cloud_data = [doc.to_dict() for doc in db.collection("evaluasi_skripsi").stream()]
-            except Exception: pass
+            try:
+                # FIX INDEX: Mengambil mentah tanpa order_by untuk menghindari Index Missing Error di GCP Console
+                docs = db.collection("evaluasi_skripsi").stream()
+                cloud_data = [doc.to_dict() for doc in docs]
+            except Exception as e:
+                st.warning(f"Gagal memuat data cloud langsung, menggunakan data lokal: {e}")
+        
+        # # Gabungkan data untuk ditabelkan ke Pandas DataFrame
+        # final_log_list = cloud_data if db else st.session_state.skripsi_data
+
+        # if final_log_list:
+        #     st.markdown("### 📋 Riwayat Log Data Terkumpul")
+        #     df_log = pd.DataFrame(final_log_list)
             
-        final_log_list = cloud_data if db else st.session_state.skripsi_data
-        if final_log_list:
-            with st.expander("🔐 Menu Database Internal (Khusus Admin)"):
-                admin_pin = st.text_input("Masukkan PIN:", type="password")
-                if admin_pin == "skripsiA":
-                    df_log = pd.DataFrame(final_log_list)
-                    if "Waktu" in df_log.columns: df_log = df_log.sort_values(by="Waktu", ascending=False).reset_index(drop=True)
-                    st.dataframe(df_log, use_container_width=True)
-                    st.download_button("📥 Download .CSV", data=df_log.to_csv(index=False).encode('utf-8'), file_name="log_skripsi.csv", mime="text/csv", use_container_width=True)
-                elif admin_pin: st.error("⚠️ PIN Salah!")
+        #     # FIX PANDAS SORTING: Pengurutan data terbaru dipindah ke sisi mesin lokal via Pandas
+        #     if "Waktu" in df_log.columns:
+        #         df_log = df_log.sort_values(by="Waktu", ascending=False).reset_index(drop=True)
+                
+        #     st.dataframe(df_log, use_container_width=True)
+            
+        #     csv_data = df_log.to_csv(index=False).encode('utf-8')
+        #     st.download_button(
+        #         label="📥 Download Data Log Pengujian (.CSV)",
+        #         data=csv_data,
+        #         file_name="log_pengujian_skripsi_cloud.csv",
+        #         mime="text/csv",
+        #         use_container_width=True
+        #     )
 
     else:
         st.info("👈 Silakan isi data di sebelah kiri lalu tekan Generate untuk memulai.")
