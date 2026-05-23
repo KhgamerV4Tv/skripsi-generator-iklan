@@ -355,7 +355,7 @@ with col_f:
 
     st.markdown('<div class="step-label">📝 Langkah 2: Data Produk & Manajemen Harga</div>', unsafe_allow_html=True)
     with st.container(border=True):
-        brand_name = st.text_input("Nama Brand / Usaha UMKM", placeholder="Rumah Pasila")
+        brand_name = st.text_input("Nama Brand / Usaha UMKM", placeholder="Masukkan nama usaha Anda")
         st.session_state['brand_name'] = brand_name
         
         keywords_raw = st.text_input("Keywords USP Usaha", placeholder="tanpa pengawet, premium, isi tebal")
