@@ -347,7 +347,7 @@ def generate_gemini_flash_image(prompt_text):
                 vertexai.init(project=project_id, location="us-central1", credentials=creds)
             else:
                 vertexai.init(project="careful-ensign-477104-p5", location="us-central1")
-            model = ImageGenerationModel.from_pretrained("gemini-3.1-flash-image-preview")
+            model = ImageGenerationModel.from_pretrained("imagen-3.0-fast-generate-001")
             res_vertex = model.generate_images(prompt=final_prompt, number_of_images=1, aspect_ratio="1:1")
             return res_vertex.images[0]._image_bytes
         except Exception:
