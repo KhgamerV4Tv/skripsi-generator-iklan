@@ -521,42 +521,58 @@ with col_r:
                 st.rerun()
 
         # ==============================================================================
-        # 📊 FORM EVALUASI & ADMIN LOG (TERSEMBUNYI)
+        # 📊 ADMIN PANEL & FORM EVALUASI DOSEN (TERSEMBUNYI)
         # ==============================================================================
         st.divider()
-        st.markdown('<div class="step-label">📊 Form Evaluasi (Untuk Dosen/Penguji)</div>', unsafe_allow_html=True)
-        with st.form("gform_mokap", clear_on_submit=True):
-            f_bidang = st.selectbox("Bidang Hasil Pengujian", ["Bidang Food & Beverages", "Bidang Fashion", "Bidang Jasa"])
-            f_tester = st.text_input("Nama Penilai", value="Dosen Pembimbing")
-            f_catatan = st.text_area("Catatan Evaluasi")
-            f_skor = st.slider("Skor Kelayakan Hasil (1 - 100)", 1, 100, 85)
-            if st.form_submit_button("📁 Simpan Data Permanen", use_container_width=True):
-                new_entry = {"Waktu": datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "Bidang": f_bidang, "Nama Usaha": brand_name, "Platform Target": st.session_state.last_p["plat"] if st.session_state.last_p else "N/A", "Tester": f_tester, "Catatan Evaluasi": f_catatan, "Skor Kelayakan": f_skor}
-                if db:
-                    try: 
-                        db.collection("evaluasi_skripsi").add(new_entry)
-                        st.toast("Tersimpan di Cloud!", icon="💾")
-                    except Exception as e: st.error(f"Gagal: {e}")
-                else:
-                    st.session_state.skripsi_data.append(new_entry)
-                    st.toast("Tersimpan lokal.", icon="💾")
-
-        # Admin Panel berpelindung PIN
+        
+        # Tarik data log dari Cloud (jika ada)
         cloud_data = []
         if db:
             try: cloud_data = [doc.to_dict() for doc in db.collection("evaluasi_skripsi").stream()]
             except Exception: pass
             
         final_log_list = cloud_data if db else st.session_state.skripsi_data
-        if final_log_list:
-            with st.expander("🔐 Menu Database Internal (Khusus Admin)"):
-                admin_pin = st.text_input("Masukkan PIN:", type="password")
-                if admin_pin == "skripsiA":
+        
+        # SEMBUNYIKAN SEMUANYA DI DALAM MENU LIPAT BER-PIN
+        with st.expander("🔐 Menu Admin & Evaluasi Pakar (Khusus Penguji)"):
+            admin_pin = st.text_input("Masukkan PIN Admin:", type="password")
+            
+            if admin_pin == "skripsiA":
+                st.success("✅ Akses Admin Terbuka!")
+                
+                # --- 1. FORM EVALUASI (Hanya muncul jika PIN benar) ---
+                st.markdown("### 📝 Form Penilaian UAT (Dosen/Pakar)")
+                with st.form("gform_mokap", clear_on_submit=True):
+                    f_bidang = st.selectbox("Bidang Hasil Pengujian", ["Bidang Food & Beverages", "Bidang Fashion", "Bidang Jasa"])
+                    f_tester = st.text_input("Nama Penilai", value="Dosen Pembimbing")
+                    f_catatan = st.text_area("Catatan Evaluasi")
+                    f_skor = st.slider("Skor Kelayakan Hasil (1 - 100)", 1, 100, 85)
+                    
+                    if st.form_submit_button("📁 Simpan Data Pengujian", use_container_width=True):
+                        new_entry = {"Waktu": datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "Bidang": f_bidang, "Nama Usaha": brand_name, "Platform Target": st.session_state.last_p["plat"] if st.session_state.last_p else "N/A", "Tester": f_tester, "Catatan Evaluasi": f_catatan, "Skor Kelayakan": f_skor}
+                        if db:
+                            try: 
+                                db.collection("evaluasi_skripsi").add(new_entry)
+                                st.toast("Tersimpan di Cloud!", icon="💾")
+                            except Exception as e: st.error(f"Gagal: {e}")
+                        else:
+                            st.session_state.skripsi_data.append(new_entry)
+                            st.toast("Tersimpan lokal.", icon="💾")
+                
+                st.divider()
+                
+                # --- 2. TABEL LOG DATABASE PENGUJIAN ---
+                st.markdown("### 🗄️ Log Database Pengujian")
+                if final_log_list:
                     df_log = pd.DataFrame(final_log_list)
                     if "Waktu" in df_log.columns: df_log = df_log.sort_values(by="Waktu", ascending=False).reset_index(drop=True)
                     st.dataframe(df_log, use_container_width=True)
                     st.download_button("📥 Download .CSV", data=df_log.to_csv(index=False).encode('utf-8'), file_name="log_skripsi.csv", mime="text/csv", use_container_width=True)
-                elif admin_pin: st.error("⚠️ PIN Salah!")
+                else:
+                    st.info("Belum ada data pengujian yang tersimpan.")
+                    
+            elif admin_pin: 
+                st.error("⚠️ PIN Salah!")
 
     else:
         st.info("👈 Silakan isi data di sebelah kiri lalu tekan Generate untuk memulai.")
