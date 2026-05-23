@@ -267,6 +267,22 @@ Pastikan output akhir TETAP mengikuti format baku (ada Headline, Caption, Hashta
         def __init__(self, content): self.content = content
     return llm_generator.invoke([DummyMsg(prompt)]).content
 
+@st.cache_data(show_spinner=False)
+def evaluate_ad_quality_master(kategori, text_result):
+    prompt = f"""Kamu adalah Dosen Pakar Marketing Digital & AI.
+Tugasmu adalah menjadi 'LLM-as-a-Judge' untuk mengevaluasi naskah iklan UMKM berikut.
+
+Kategori Usaha: {kategori}
+Naskah Iklan:
+{text_result}
+
+Berikan penilaian analitis dan ketat. Tampilkan output HANYA dalam format ini:
+SKOR KELAYAKAN: [Berikan angka 1-100]
+ANALISIS PAKAR: [Berikan 2-3 kalimat penjelasan mengapa skor tersebut diberikan, sebutkan kelebihan dan kekurangannya berdasarkan target pasar]
+"""
+    class DummyMsg:
+        def __init__(self, content): self.content = content
+    return llm_generator.invoke([DummyMsg(prompt)]).content
 # ==============================================================================
 # MODEL GENERATOR OPENAI (GPT-IMAGE-2 / DALL-E)
 # ==============================================================================
@@ -406,7 +422,9 @@ with col_f:
         else:
             st.session_state.img_mem = {"A": None}
             st.session_state.chat_history = [] # Reset riwayat chat untuk generate baru
-            with st.spinner("AI sedang meracik copywriting..."):
+            st.session_state.ai_eval_result = None # Reset hasil evaluasi lama
+            
+            with st.spinner("🤖 Agent 1: AI sedang meracik copywriting..."):
                 img_bytes = [f.getvalue() for f in foto_produk] if foto_produk else []
                 res = generate_ad_text_master(
                     kategori, brand_name, keywords, gaya, platform, market, mood, bg, subjek, img_bytes, 
@@ -416,6 +434,11 @@ with col_f:
                 vis, txt = parse_output_for_image(res)
                 st.session_state.main_txt, st.session_state.vis_prompt = txt, vis
                 st.session_state.last_p = {"nama": brand_name, "plat": platform}
+                
+            # AGENT 2 OTOMATIS BERJALAN SETELAH AGENT 1 SELESAI
+            with st.spinner("⚖️ Agent 2: Mengevaluasi kualitas (Quality Control)..."):
+                hasil_evaluasi = evaluate_ad_quality_master(kategori, txt)
+                st.session_state.ai_eval_result = hasil_evaluasi
 
 # --- KOLOM KANAN: OUTPUT & REVISI ---
 with col_r:
@@ -437,6 +460,13 @@ with col_r:
             else:
                 # Jika sakelar OFF: Tampilkan versi elegan (Markdown)
                 st.markdown(st.session_state.main_txt)
+            
+            # --- FITUR UX: SERTIFIKAT LULUS QC DARI AI EVALUATOR ---
+            if st.session_state.get('ai_eval_result'):
+                st.divider()
+                st.success("✅ **Lulus Uji Kualitas Pakar AI (Quality Control)**")
+                with st.expander("📊 Lihat Detail Analisis (Opsional)"):
+                    st.markdown(st.session_state.ai_eval_result)
             
         st.divider()
         st.markdown('<div class="step-label">🎨 Langkah 5: Render Visual Final</div>', unsafe_allow_html=True)
