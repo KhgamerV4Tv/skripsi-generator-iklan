@@ -507,39 +507,34 @@ with col_r:
         if st.session_state.ai_review:
             with st.container(border=True): st.info(st.session_state.ai_review)
 
-        st.divider()
-        st.markdown('<div class="step-label">🎨 Langkah 5: Render Visual (Komparasi Skripsi)</div>', unsafe_allow_html=True)
-        vis_edit = st.text_area("Instruksi Prompt Visual", value=st.session_state.vis_prompt, height=80)
+       st.divider()
+        st.markdown('<div class="step-label">🎨 Langkah 5: Render Visual Final</div>', unsafe_allow_html=True)
         
-        t_imgn, t_dalle, t_gmn = st.tabs(["🖼️ Imagen 3.0", "🎨 GPT Image 2", "⚡ Gemini Flash"])
+        # Sembunyikan prompt yang rumit di dalam expander agar UMKM tidak pusing, 
+        # tapi tetap bisa diedit kalau mereka mau.
+        with st.expander("⚙️ Lihat/Edit Instruksi AI (Opsional)"):
+            vis_edit = st.text_area("Instruksi Prompt Visual", value=st.session_state.vis_prompt, height=80, label_visibility="collapsed")
         
-        with t_imgn:
-            st.markdown('<div class="cost-badge">Estimasi Biaya API: ~$0.03</div>', unsafe_allow_html=True)
-            if st.button("Render Imagen 3.0", key="btn_a", use_container_width=True):
-                with st.spinner("Merender Imagen via API murni..."):
-                    # FIX: Memanggil hanya dengan argument tunggal vis_edit
-                    raw = generate_imagen_image(vis_edit)
-                    st.session_state.img_mem["A"] = apply_dynamic_branding(raw, logo_file, posisi_logo) if raw else None
-            if st.session_state.img_mem["A"]:
-                st.image(st.session_state.img_mem["A"], caption="Model A: Imagen 3.0")
-
-        with t_dalle:
-            st.markdown('<div class="cost-badge">Estimasi Biaya API: ~$0.05</div>', unsafe_allow_html=True)
-            if st.button("Render GPT/DALL-E", key="btn_b", use_container_width=True):
-                with st.spinner("Merender via OpenAI..."):
-                    raw = generate_dalle_image(vis_edit)
-                    st.session_state.img_mem["B"] = apply_dynamic_branding(raw, logo_file, posisi_logo) if raw else None
-            if st.session_state.img_mem["B"]:
-                st.image(st.session_state.img_mem["B"], caption="Model B: GPT Image")
-
-        with t_gmn:
-            st.markdown('<div class="cost-badge">Estimasi Biaya API: Gratis</div>', unsafe_allow_html=True)
-            if st.button("Render Nano Banana 2", key="btn_c", use_container_width=True):
-                with st.spinner("Merender Gambar..."):
-                    raw = generate_gemini_flash_image(vis_edit)
-                    st.session_state.img_mem["C"] = apply_dynamic_branding(raw, logo_file, posisi_logo) if raw else None
-            if st.session_state.img_mem["C"]:
-                st.image(st.session_state.img_mem["C"], caption="Model C: Gemini Nano Banana")
+        st.info("💡 Sistem akan merender gambar menggunakan model AI Fotografi Komersial resolusi tinggi untuk hasil maksimal.")
+        
+        # SATU TOMBOL UTAMA UNTUK UMKM (Menggunakan Imagen 3.0 di belakang layar)
+        if st.button("✨ Render Foto Studio (Otomatis)", type="primary", use_container_width=True):
+            with st.spinner("📸 Sedang di studio AI... Merender gambar premium (sekitar 10-15 detik)..."):
+                raw = generate_imagen_image(vis_edit)
+                st.session_state.img_mem["A"] = apply_dynamic_branding(raw, logo_file, posisi_logo) if raw else None
+                
+        if st.session_state.img_mem["A"]:
+            st.success("✅ Gambar berhasil dibuat!")
+            st.image(st.session_state.img_mem["A"], caption="Hasil Render Final Inamikro Ad Generator")
+            
+            # Tombol Download
+            st.download_button(
+                label="⬇️ Download Gambar Resolusi Tinggi", 
+                data=st.session_state.img_mem["A"], 
+                file_name=f"promo_{brand_name.replace(' ', '_') if brand_name else 'umkm'}.png", 
+                mime="image/png", 
+                use_container_width=True
+            )
 
         # ==============================================================================
         # 📊 FORM EVALUASI DATA REAL-TIME CLOUD (FIX INDEX ORDER_BY ERROR)
