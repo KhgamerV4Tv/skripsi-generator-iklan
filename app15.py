@@ -507,7 +507,7 @@ with col_r:
         if st.session_state.ai_review:
             with st.container(border=True): st.info(st.session_state.ai_review)
 
-       st.divider()
+        st.divider()
         st.markdown('<div class="step-label">🎨 Langkah 5: Render Visual Final</div>', unsafe_allow_html=True)
         
         # Sembunyikan prompt yang rumit di dalam expander agar UMKM tidak pusing, 
