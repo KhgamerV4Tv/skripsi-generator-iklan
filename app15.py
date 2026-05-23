@@ -104,7 +104,10 @@ KBLI_DATA = {
     "47841 - Perdagangan Eceran Makanan Keliling": {"desc": "Usaha berjualan makanan dan minuman keliling.", "tipe": "food"},
     "47711 - Perdagangan Eceran Pakaian (Fashion)": {"desc": "Usaha penjualan pakaian jadi eceran.", "tipe": "fashion"},
     "47726 - Perdagangan Eceran Sepatu/Sandal": {"desc": "Usaha penjualan alas kaki eceran.", "tipe": "fashion"},
-    "96012 - Jasa Penatu/Laundry": {"desc": "Usaha jasa pencucian pakaian.", "tipe": "jasa"}
+    "47721 - Perdagangan Eceran Kosmetik & Skincare": {"desc": "Usaha penjualan produk kecantikan, makeup, dan perawatan kulit.", "tipe": "fashion"},
+    "32990 - Industri Kerajinan Tangan (Kriya/Aksesoris)": {"desc": "Usaha pembuatan kerajinan, aksesoris, atau souvenir.", "tipe": "fashion"},
+    "96012 - Jasa Penatu/Laundry": {"desc": "Usaha jasa pencucian pakaian.", "tipe": "jasa"},
+    "96020 - Jasa Salon & Perawatan Kecantikan": {"desc": "Usaha layanan pangkas rambut, makeup artist, dan perawatan tubuh.", "tipe": "jasa"}
 }
 
 BROSUR_ELEMEN = {
