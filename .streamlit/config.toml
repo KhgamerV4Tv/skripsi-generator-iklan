@@ -2,13 +2,11 @@
 pythonVersion = "3.11"
 
 [theme]
-# Force light theme sebagai default — match desain skripsi
-base = "light"
-primaryColor = "#4f46e5"
-backgroundColor = "#f8fafc"
-secondaryBackgroundColor = "#ffffff"
-textColor = "#1e293b"
-font = "sans serif"
+base="dark"
+primaryColor="#4f46e5"
+backgroundColor="#0f172a"
+secondaryBackgroundColor="#1e293b"
+textColor="#f8fafc"
 
 [client]
 # Tampilkan toolbar (titik 3) supaya user bisa ganti theme

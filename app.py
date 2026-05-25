@@ -35,11 +35,11 @@ st.markdown("""
     }
 
     [data-testid="stAppViewContainer"] {
-        background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+        background: var(--background-color);
     }
 
-    /* Sembunyikan default Streamlit chrome */
-    #MainMenu, footer, header[data-testid="stHeader"] { visibility: hidden; }
+    /* Sembunyikan footer Streamlit, biarkan menu titik 3 muncul untuk ganti theme */
+    footer { visibility: hidden; }
     .block-container { padding-top: 1.5rem !important; padding-bottom: 3rem !important; }
 
     /* ===== HERO HEADER ===== */
@@ -101,12 +101,12 @@ st.markdown("""
 
     /* ===== STEP PROGRESS STEPPER ===== */
     .stepper-wrap {
-        background: #ffffff;
+        background: var(--secondary-background-color, #ffffff);
         border-radius: 16px;
         padding: 1.1rem 1.3rem;
         margin-bottom: 1.5rem;
         box-shadow: 0 2px 8px -2px rgba(15, 23, 42, 0.08);
-        border: 1px solid #e2e8f0;
+        border: 1px solid rgba(128, 128, 128, 0.2);
     }
     .stepper {
         display: flex; justify-content: space-between; align-items: center;
@@ -163,18 +163,22 @@ st.markdown("""
         flex-shrink: 0;
     }
     .section-title {
-        font-size: 1.05rem; font-weight: 700; color: #1e293b;
+        font-size: 1.05rem; font-weight: 700;
+        color: var(--text-color, #1e293b);
         letter-spacing: -0.01em;
     }
     .section-subtitle {
-        font-size: 0.78rem; color: #64748b; font-weight: 500;
+        font-size: 0.78rem;
+        color: var(--text-color-secondary, #64748b);
+        font-weight: 500;
         margin-top: 0.1rem;
+        opacity: 0.85;
     }
 
     /* ===== CONTAINER CARDS ===== */
     div[data-testid="stVerticalBlockBorderWithFormatting"] {
-        background-color: #ffffff !important;
-        border: 1px solid #e2e8f0 !important;
+        background-color: var(--secondary-background-color, #ffffff) !important;
+        border: 1px solid rgba(128, 128, 128, 0.2) !important;
         box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 4px 12px -4px rgba(15, 23, 42, 0.06) !important;
         border-radius: 16px !important;
         padding: 1.5rem !important;
@@ -260,17 +264,38 @@ st.markdown("""
         box-shadow: 0 8px 20px -2px rgba(79, 70, 229, 0.6) !important;
     }
 
-    /* ===== INPUTS ===== */
-    .stTextInput input, .stTextArea textarea, .stNumberInput input, .stSelectbox > div > div {
+   /* ===== INPUTS & WIDGETS ===== */
+    .stTextInput input, .stTextArea textarea, .stNumberInput input, 
+    .stSelectbox > div > div, .stMultiSelect > div > div,
+    [data-testid="stFileUploaderDropzone"] {
         border-radius: 10px !important;
-        border-color: #e2e8f0 !important;
+        border-color: rgba(128, 128, 128, 0.2) !important;
+        background-color: var(--secondary-background-color) !important;
+        color: var(--text-color) !important;
         font-family: 'Plus Jakarta Sans', sans-serif !important;
     }
-    .stTextInput input:focus, .stTextArea textarea:focus, .stNumberInput input:focus {
+
+    .stTextInput input:focus, .stTextArea textarea:focus, .stNumberInput input:focus,
+    .stSelectbox > div > div:focus, .stMultiSelect > div > div:focus {
         border-color: #4f46e5 !important;
         box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1) !important;
     }
 
+    ::placeholder {
+        color: #94a3b8 !important;
+        opacity: 1 !important;
+    }
+
+    [data-testid="stWidgetLabel"] p, 
+    [data-testid="stWidgetLabel"] div,
+    label {
+        color: var(--text-color) !important;
+        font-weight: 600 !important;
+    }
+
+    .stMultiSelect div[data-baseweb="select"] span {
+        color: var(--text-color) !important;
+    }
     /* ===== QC SUCCESS CARD ===== */
     .qc-card {
         background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
@@ -294,8 +319,8 @@ st.markdown("""
 
     /* ===== EMPTY STATE ===== */
     .empty-state {
-        background: #ffffff;
-        border: 2px dashed #cbd5e1;
+        background: var(--secondary-background-color, #ffffff);
+        border: 2px dashed rgba(128, 128, 128, 0.35);
         border-radius: 16px;
         padding: 3.5rem 2rem;
         text-align: center;
@@ -335,8 +360,8 @@ st.markdown("""
     /* ===== METRIC CARDS ===== */
     .metric-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.7rem; margin: 0.8rem 0; }
     .metric-card {
-        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-        border: 1px solid #e2e8f0;
+        background: var(--secondary-background-color, #ffffff);
+        border: 1px solid rgba(128, 128, 128, 0.2);
         border-radius: 12px;
         padding: 0.9rem;
         text-align: center;
@@ -357,6 +382,207 @@ st.markdown("""
     /* ===== RADIO & SELECT POLISH ===== */
     .stRadio > div { gap: 0.5rem; }
 
+    /* =============================================================
+       UNIVERSAL TEXT FIX — semua custom HTML pake Streamlit's theme variable
+       agar otomatis kontras di light ATAU dark mode
+       ============================================================= */
+    .section-title { color: var(--text-color) !important; }
+    .section-subtitle { color: var(--text-color) !important; opacity: 0.7; }
+    .empty-title { color: var(--text-color) !important; }
+    .empty-sub { color: var(--text-color) !important; opacity: 0.7; }
+    .step-label-txt { color: var(--text-color) !important; opacity: 0.7; }
+    .step-label-txt.active { color: #7c3aed !important; opacity: 1; }
+    .metric-lbl { color: var(--text-color) !important; opacity: 0.7; }
+    .metric-val { color: #7c3aed !important; }
+    .qc-title { color: #065f46 !important; }
+    .qc-sub { color: #047857 !important; }
+
+    /* =============================================================
+       DARK MODE ADAPTIVE — agar tetap rapi saat user pilih dark theme
+       ============================================================= */
+    @media (prefers-color-scheme: dark) {
+        [data-testid="stAppViewContainer"] {
+            background: linear-gradient(180deg, #0f172a 0%, #1e1b4b 100%);
+        }
+        /* Perbaikan teks label input di dark mode */
+        [data-testid="stWidgetLabel"] p, 
+        [data-testid="stWidgetLabel"] div,
+        label {
+            color: #f8fafc !important; /* Putih terang */
+        }
+
+        /* Container cards jadi dark slate */
+        div[data-testid="stVerticalBlockBorderWithFormatting"] {
+            background-color: #1e293b !important;
+            border: 1px solid #334155 !important;
+            box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.4) !important;
+        }
+
+        /* Info boxes — adjust untuk dark */
+        .kbli-desc {
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%) !important;
+            color: #dbeafe !important;
+        }
+        .kbli-desc * { color: #dbeafe !important; }
+
+        .elemen-box {
+            background: linear-gradient(135deg, #14532d 0%, #166534 100%) !important;
+            color: #dcfce7 !important;
+        }
+        .elemen-box * { color: #dcfce7 !important; }
+
+        .photo-caption-box {
+            background: linear-gradient(135deg, #7c2d12 0%, #9a3412 100%) !important;
+            color: #fed7aa !important;
+        }
+        .photo-caption-box * { color: #fed7aa !important; }
+
+        /* Keyword tags */
+        .kw-tag {
+            background: linear-gradient(135deg, #0c4a6e 0%, #075985 100%) !important;
+            color: #bae6fd !important;
+            border-color: #0369a1 !important;
+        }
+
+        /* Section title & subtitle */
+        .section-title { color: #f1f5f9 !important; }
+        .section-subtitle { color: #94a3b8 !important; }
+
+        /* Stepper card */
+        .stepper-wrap {
+            background: #1e293b !important;
+            border-color: #334155 !important;
+        }
+        .step-circle {
+            background: #334155 !important;
+            color: #94a3b8 !important;
+            border-color: #475569 !important;
+        }
+        .step-label-txt { color: #94a3b8 !important; }
+        .step-label-txt.active { color: #a78bfa !important; }
+        .step-connector { background: #334155 !important; }
+
+        /* QC Card */
+        .qc-card {
+            background: linear-gradient(135deg, #064e3b 0%, #065f46 100%) !important;
+            border-color: #10b981 !important;
+        }
+        .qc-title { color: #d1fae5 !important; }
+        .qc-sub { color: #6ee7b7 !important; }
+
+        /* Empty state */
+        .empty-state {
+            background: #1e293b !important;
+            border-color: #475569 !important;
+        }
+        .empty-title { color: #cbd5e1 !important; }
+        .empty-sub { color: #94a3b8 !important; }
+
+        /* Metric cards */
+        .metric-card {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
+            border-color: #334155 !important;
+        }
+        .metric-val { color: #a78bfa !important; }
+        .metric-lbl { color: #94a3b8 !important; }
+
+        /* Status badge */
+        .status-badge {
+            background: linear-gradient(135deg, #3b0764 0%, #581c87 100%) !important;
+            border-color: #a78bfa !important;
+            color: #e9d5ff !important;
+        }
+        .status-badge.connected {
+            background: linear-gradient(135deg, #064e3b 0%, #065f46 100%) !important;
+            border-color: #10b981 !important;
+            color: #d1fae5 !important;
+        }
+
+        /* Inputs di dark mode */
+        .stTextInput input, .stTextArea textarea, .stNumberInput input,
+        .stSelectbox > div > div, .stMultiSelect > div > div,
+        [data-testid="stFileUploaderDropzone"] {
+            background-color: #0f172a !important;
+            color: #f1f5f9 !important;
+            border-color: #334155 !important;
+        }
+
+        hr { border-color: #334155 !important; }
+    }
+
+    /* Streamlit's official dark theme class support */
+    .stApp[data-theme="dark"] [data-testid="stAppViewContainer"] {
+        background: linear-gradient(180deg, #0f172a 0%, #1e1b4b 100%);
+    }
+    .stApp[data-theme="dark"] div[data-testid="stVerticalBlockBorderWithFormatting"] {
+        background-color: #1e293b !important;
+        border-color: #334155 !important;
+    }
+        .stApp[data-theme="dark"] [data-testid="stWidgetLabel"] p,
+    .stApp[data-theme="dark"] [data-testid="stWidgetLabel"] div,
+    .stApp[data-theme="dark"] label {
+        color: #f8fafc !important;
+    }
+    .stApp[data-theme="dark"] .section-title { color: #f1f5f9 !important; }
+    .stApp[data-theme="dark"] .section-subtitle { color: #94a3b8 !important; }
+    .stApp[data-theme="dark"] .stepper-wrap {
+        background: #1e293b !important; border-color: #334155 !important;
+    }
+    .stApp[data-theme="dark"] .step-circle {
+        background: #334155 !important; color: #94a3b8 !important; border-color: #475569 !important;
+    }
+    .stApp[data-theme="dark"] .step-label-txt { color: #94a3b8 !important; }
+    .stApp[data-theme="dark"] .empty-state {
+        background: #1e293b !important; border-color: #475569 !important;
+    }
+    .stApp[data-theme="dark"] .empty-title { color: #cbd5e1 !important; }
+    .stApp[data-theme="dark"] .empty-sub { color: #94a3b8 !important; }
+    .stApp[data-theme="dark"] .kbli-desc,
+    .stApp[data-theme="dark"] .kbli-desc * { color: #dbeafe !important; }
+    .stApp[data-theme="dark"] .kbli-desc {
+        background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%) !important;
+    }
+/* =============================================================
+       PERBAIKAN TEKS RADIO BUTTON & SUB-HEADING (MARKDOWN)
+       ============================================================= */
+    /* 1. Memperbaiki teks opsi Radio Button (Instagram, WhatsApp, Diskon, dll) */
+    .stRadio [data-testid="stMarkdownContainer"] p {
+        color: var(--text-color, #f1f5f9) !important;
+        font-weight: 500 !important;
+    }
+
+    /* 2. Memperbaiki teks Heading (h1-h6) pada st.markdown (seperti ##### Input Harga) */
+    [data-testid="stMarkdownContainer"] h1,
+    [data-testid="stMarkdownContainer"] h2,
+    [data-testid="stMarkdownContainer"] h3,
+    [data-testid="stMarkdownContainer"] h4,
+    [data-testid="stMarkdownContainer"] h5,
+    [data-testid="stMarkdownContainer"] h6 {
+        color: var(--text-color, #f1f5f9) !important;
+    }
+
+    /* 3. Paksaan mutlak khusus untuk mode gelap (Dark Mode Adaptive) */
+    @media (prefers-color-scheme: dark) {
+        .stRadio [data-testid="stMarkdownContainer"] p,
+        [data-testid="stMarkdownContainer"] h1,
+        [data-testid="stMarkdownContainer"] h2,
+        [data-testid="stMarkdownContainer"] h3,
+        [data-testid="stMarkdownContainer"] h4,
+        [data-testid="stMarkdownContainer"] h5,
+        [data-testid="stMarkdownContainer"] h6 {
+            color: #f8fafc !important; /* Paksa jadi putih terang */
+        }
+    }
+    
+    .stApp[data-theme="dark"] .stRadio [data-testid="stMarkdownContainer"] p,
+    .stApp[data-theme="dark"] [data-testid="stMarkdownContainer"] h1,
+    .stApp[data-theme="dark"] [data-testid="stMarkdownContainer"] h2,
+    .stApp[data-theme="dark"] [data-testid="stMarkdownContainer"] h3,
+    .stApp[data-theme="dark"] [data-theme="dark"] [data-testid="stMarkdownContainer"] h4,
+    .stApp[data-theme="dark"] [data-testid="stMarkdownContainer"] h5,
+    .stApp[data-theme="dark"] [data-testid="stMarkdownContainer"] h6 {
+        color: #f8fafc !important; /* Paksa jadi putih terang */
+    }
 </style>
 """, unsafe_allow_html=True)
 
