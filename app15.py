@@ -13,375 +13,70 @@ from PIL import Image
 import google.generativeai as genai
 
 # ==============================================================================
-# KONFIGURASI HALAMAN
+# KONFIGURASI HALAMAN & CSS RESMI INAMIKRO (ELEGAN & MODERN)
 # ==============================================================================
-st.set_page_config(
-    page_title="Inamikro Ad Generator V18 Pro",
-    layout="wide",
-    page_icon="📈",
-    initial_sidebar_state="expanded"
-)
+st.set_page_config(page_title="Inamikro Ad Generator V18 Pro", layout="wide", page_icon="📈")
 
-# ==============================================================================
-# CSS — DESAIN AKADEMIK ELEGAN UNTUK PRESENTASI SKRIPSI
-# ==============================================================================
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap');
-
-    /* ===== GLOBAL ===== */
-    html, body, [data-testid="stAppViewContainer"], [data-testid="stSidebar"] {
-        font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght=400;500;600;700&display=swap');
+    html, body, [data-testid="stAppViewContainer"] {
+        font-family: 'Inter', sans-serif;
     }
-
-    [data-testid="stAppViewContainer"] {
-        background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+    
+    .main-header { 
+        background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+        padding: 2rem;
+        border-radius: 12px;
+        text-align: center;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     }
-
-    /* Sembunyikan default Streamlit chrome */
-    #MainMenu, footer, header[data-testid="stHeader"] { visibility: hidden; }
-    .block-container { padding-top: 1.5rem !important; padding-bottom: 3rem !important; }
-
-    /* ===== HERO HEADER ===== */
-    .hero-header {
-        background: linear-gradient(135deg, #1e1b4b 0%, #3730a3 50%, #4f46e5 100%);
-        padding: 2.2rem 2.5rem;
-        border-radius: 20px;
-        margin-bottom: 1.8rem;
-        box-shadow: 0 20px 50px -15px rgba(79, 70, 229, 0.45);
-        position: relative;
-        overflow: hidden;
+    .main-header h1 { color: #ffffff !important; font-size: 2.2rem; font-weight: 700; margin: 0; }
+    .main-header p { color: #e2e8f0; margin-top: 0.5rem; font-size: 1rem; }
+    
+    .step-label { 
+        font-weight: 700; font-size: 1.15rem; color: #1e40af; 
+        margin: 1.5rem 0 0.8rem 0; padding-bottom: 0.3rem; border-bottom: 2px solid #e2e8f0;
     }
-    .hero-header::before {
-        content: '';
-        position: absolute; top: -50%; right: -10%;
-        width: 400px; height: 400px;
-        background: radial-gradient(circle, rgba(251, 191, 36, 0.18) 0%, transparent 70%);
-        border-radius: 50%;
-    }
-    .hero-header::after {
-        content: '';
-        position: absolute; bottom: -60%; left: -10%;
-        width: 350px; height: 350px;
-        background: radial-gradient(circle, rgba(167, 139, 250, 0.15) 0%, transparent 70%);
-        border-radius: 50%;
-    }
-    .hero-content { position: relative; z-index: 2; display: flex; align-items: center; gap: 1.4rem; }
-    .hero-icon {
-        width: 64px; height: 64px;
-        background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-        border-radius: 16px;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 2rem;
-        box-shadow: 0 8px 20px -5px rgba(251, 191, 36, 0.6);
-        flex-shrink: 0;
-    }
-    .hero-text h1 {
-        color: #ffffff !important;
-        font-size: 1.85rem; font-weight: 800;
-        margin: 0; letter-spacing: -0.02em;
-        line-height: 1.1;
-    }
-    .hero-text .hero-sub {
-        color: #c7d2fe;
-        margin-top: 0.35rem; font-size: 0.95rem;
-        font-weight: 500;
-    }
-    .hero-badges { margin-top: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap; position: relative; z-index: 2; }
-    .hero-badge {
-        background: rgba(255, 255, 255, 0.12);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.18);
-        padding: 0.35rem 0.85rem;
-        border-radius: 999px;
-        color: #e0e7ff;
-        font-size: 0.75rem;
-        font-weight: 600;
-    }
-
-    /* ===== STEP PROGRESS STEPPER ===== */
-    .stepper-wrap {
-        background: #ffffff;
-        border-radius: 16px;
-        padding: 1.1rem 1.3rem;
-        margin-bottom: 1.5rem;
-        box-shadow: 0 2px 8px -2px rgba(15, 23, 42, 0.08);
-        border: 1px solid #e2e8f0;
-    }
-    .stepper {
-        display: flex; justify-content: space-between; align-items: center;
-        gap: 0.5rem; overflow-x: auto;
-    }
-    .step-item {
-        display: flex; flex-direction: column; align-items: center;
-        flex: 1; min-width: 80px; text-align: center;
-        position: relative;
-    }
-    .step-circle {
-        width: 36px; height: 36px;
-        border-radius: 50%;
-        display: flex; align-items: center; justify-content: center;
-        font-weight: 700; font-size: 0.9rem;
-        background: #f1f5f9; color: #94a3b8;
-        border: 2px solid #e2e8f0;
-        transition: all 0.3s;
-        z-index: 2;
-    }
-    .step-circle.active {
-        background: linear-gradient(135deg, #4f46e5, #7c3aed);
-        color: #fff; border-color: #4f46e5;
-        box-shadow: 0 4px 12px -2px rgba(79, 70, 229, 0.5);
-    }
-    .step-circle.done {
-        background: #10b981; color: #fff; border-color: #10b981;
-    }
-    .step-label-txt {
-        font-size: 0.7rem; color: #64748b;
-        margin-top: 0.4rem; font-weight: 600;
-        line-height: 1.2;
-    }
-    .step-label-txt.active { color: #4f46e5; }
-    .step-connector {
-        position: absolute; top: 18px; left: 50%; width: 100%;
-        height: 2px; background: #e2e8f0; z-index: 1;
-    }
-    .step-item:last-child .step-connector { display: none; }
-
-    /* ===== SECTION HEADER ===== */
-    .section-card-header {
-        display: flex; align-items: center; gap: 0.7rem;
-        margin: 0 0 1rem 0;
-    }
-    .section-num {
-        width: 32px; height: 32px;
-        background: linear-gradient(135deg, #4f46e5, #7c3aed);
-        color: #fff;
-        border-radius: 10px;
-        display: flex; align-items: center; justify-content: center;
-        font-weight: 800; font-size: 0.95rem;
-        box-shadow: 0 4px 10px -2px rgba(79, 70, 229, 0.4);
-        flex-shrink: 0;
-    }
-    .section-title {
-        font-size: 1.05rem; font-weight: 700; color: #1e293b;
-        letter-spacing: -0.01em;
-    }
-    .section-subtitle {
-        font-size: 0.78rem; color: #64748b; font-weight: 500;
-        margin-top: 0.1rem;
-    }
-
-    /* ===== CONTAINER CARDS ===== */
+    
     div[data-testid="stVerticalBlockBorderWithFormatting"] {
-        background-color: #ffffff !important;
-        border: 1px solid #e2e8f0 !important;
-        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 4px 12px -4px rgba(15, 23, 42, 0.06) !important;
-        border-radius: 16px !important;
-        padding: 1.5rem !important;
-        transition: box-shadow 0.25s ease;
+        background-color: transparent; border: 1px solid #e2e8f0 !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        border-radius: 12px !important; padding: 1.5rem !important;
     }
-    div[data-testid="stVerticalBlockBorderWithFormatting"]:hover {
-        box-shadow: 0 4px 6px rgba(15, 23, 42, 0.05), 0 12px 25px -5px rgba(15, 23, 42, 0.1) !important;
-    }
-
-    /* ===== INFO BOXES ===== */
+    
     .kbli-desc, .elemen-box, .photo-caption-box {
-        border-radius: 10px;
-        padding: 0.85rem 1.1rem;
-        font-size: 0.85rem;
-        margin-top: 0.7rem;
-        color: #1e293b !important;
-        line-height: 1.55;
-        font-weight: 500;
+        border-radius: 8px; padding: 0.75rem 1rem; font-size: 0.85rem; 
+        margin-top: 0.6rem; color: #1e293b !important; line-height: 1.5;
     }
-    .kbli-desc {
-        background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-        border-left: 4px solid #3b82f6;
+    
+    .kbli-desc { background: #eff6ff; border-left: 4px solid #3b82f6; }
+    .elemen-box { background: #f0fdf4; border-left: 4px solid #22c55e; }
+    .photo-caption-box { background: #fff7ed; border-left: 4px solid #f97316; margin-bottom: 0.8rem;}
+    
+    .kw-tag { 
+        background: #e0f2fe; border-radius: 20px; padding: 6px 14px; 
+        font-size: 0.8rem; color: #0369a1; margin: 4px 4px 10px 0; 
+        display: inline-block; font-weight: 600; border: 1px solid #bae6fd;
     }
-    .elemen-box {
-        background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-        border-left: 4px solid #22c55e;
+    .master-prompt-badge { 
+        background: #f3e8ff; border-radius: 6px; padding: 0.4rem 0.8rem; 
+        font-size: 0.8rem; color: #6b21a8; display: inline-block; 
+        margin-bottom: 1rem; border: 1px solid #e9d5ff;
     }
-    .photo-caption-box {
-        background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
-        border-left: 4px solid #f97316;
-        margin-bottom: 0.9rem;
-    }
-
-    /* ===== KEYWORD TAGS ===== */
-    .kw-tag {
-        background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
-        border-radius: 999px;
-        padding: 7px 14px;
-        font-size: 0.78rem;
-        color: #0c4a6e;
-        margin: 4px 5px 8px 0;
-        display: inline-block;
-        font-weight: 600;
-        border: 1px solid #7dd3fc;
-        box-shadow: 0 1px 3px rgba(14, 165, 233, 0.15);
-    }
-
-    /* ===== STATUS BADGE ===== */
-    .status-badge {
-        display: inline-flex; align-items: center; gap: 0.5rem;
-        background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
-        border: 1px solid #d8b4fe;
-        border-radius: 10px;
-        padding: 0.6rem 1rem;
-        font-size: 0.82rem;
-        color: #6b21a8;
-        font-weight: 600;
-        margin-bottom: 1.2rem;
-        width: 100%;
-        justify-content: center;
-    }
-    .status-badge.connected {
-        background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-        border-color: #86efac;
-        color: #166534;
-    }
-
-    /* ===== BUTTONS ===== */
-    .stButton > button {
-        border-radius: 12px !important;
-        font-weight: 600 !important;
-        transition: all 0.2s !important;
-        letter-spacing: -0.01em;
-    }
-    .stButton > button[kind="primary"] {
-        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%) !important;
-        border: none !important;
-        box-shadow: 0 4px 14px -2px rgba(79, 70, 229, 0.45) !important;
-        padding: 0.7rem 1.2rem !important;
-    }
-    .stButton > button[kind="primary"]:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 8px 20px -2px rgba(79, 70, 229, 0.6) !important;
-    }
-
-    /* ===== INPUTS ===== */
-    .stTextInput input, .stTextArea textarea, .stNumberInput input, .stSelectbox > div > div {
-        border-radius: 10px !important;
-        border-color: #e2e8f0 !important;
-        font-family: 'Plus Jakarta Sans', sans-serif !important;
-    }
-    .stTextInput input:focus, .stTextArea textarea:focus, .stNumberInput input:focus {
-        border-color: #4f46e5 !important;
-        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1) !important;
-    }
-
-    /* ===== QC SUCCESS CARD ===== */
-    .qc-card {
-        background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
-        border: 1px solid #6ee7b7;
-        border-radius: 12px;
-        padding: 1rem 1.2rem;
-        margin-top: 0.8rem;
-        display: flex; align-items: center; gap: 0.8rem;
-    }
-    .qc-icon {
-        width: 40px; height: 40px;
-        background: linear-gradient(135deg, #10b981, #059669);
-        border-radius: 10px;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 1.3rem;
-        flex-shrink: 0;
-        box-shadow: 0 4px 10px -2px rgba(16, 185, 129, 0.4);
-    }
-    .qc-title { font-weight: 700; color: #065f46; font-size: 0.95rem; }
-    .qc-sub { font-size: 0.78rem; color: #047857; margin-top: 0.15rem; }
-
-    /* ===== EMPTY STATE ===== */
-    .empty-state {
-        background: #ffffff;
-        border: 2px dashed #cbd5e1;
-        border-radius: 16px;
-        padding: 3.5rem 2rem;
-        text-align: center;
-    }
-    .empty-icon { font-size: 3.5rem; margin-bottom: 0.6rem; opacity: 0.5; }
-    .empty-title { font-size: 1.1rem; font-weight: 700; color: #475569; margin-bottom: 0.4rem; }
-    .empty-sub { font-size: 0.88rem; color: #94a3b8; }
-
-    /* ===== SIDEBAR ===== */
-    [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #1e1b4b 0%, #312e81 100%);
-    }
-    [data-testid="stSidebar"] * { color: #e0e7ff !important; }
-    [data-testid="stSidebar"] .sidebar-title {
-        font-size: 1.1rem; font-weight: 800;
-        color: #fff !important; margin-bottom: 0.3rem;
-    }
-    [data-testid="stSidebar"] .sidebar-sub {
-        font-size: 0.78rem; color: #a5b4fc !important; margin-bottom: 1.2rem;
-    }
-    [data-testid="stSidebar"] .sidebar-section {
-        background: rgba(255, 255, 255, 0.06);
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        border-radius: 12px;
-        padding: 0.85rem 1rem;
-        margin-bottom: 0.8rem;
-    }
-    [data-testid="stSidebar"] .sb-label {
-        font-size: 0.72rem; color: #a5b4fc !important;
-        text-transform: uppercase; letter-spacing: 0.08em;
-        font-weight: 700; margin-bottom: 0.3rem;
-    }
-    [data-testid="stSidebar"] .sb-value {
-        font-size: 0.92rem; color: #fff !important; font-weight: 600;
-    }
-
-    /* ===== METRIC CARDS ===== */
-    .metric-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.7rem; margin: 0.8rem 0; }
-    .metric-card {
-        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        padding: 0.9rem;
-        text-align: center;
-    }
-    .metric-val { font-size: 1.4rem; font-weight: 800; color: #4f46e5; }
-    .metric-lbl { font-size: 0.72rem; color: #64748b; font-weight: 600; margin-top: 0.2rem; }
-
-    /* ===== DIVIDERS ===== */
-    hr { margin: 1.2rem 0 !important; border-color: #e2e8f0 !important; }
-
-    /* ===== CHAT MESSAGES ===== */
-    [data-testid="stChatMessage"] {
-        border-radius: 12px !important;
-        padding: 0.9rem 1rem !important;
-        margin-bottom: 0.6rem !important;
-    }
-
-    /* ===== RADIO & SELECT POLISH ===== */
-    .stRadio > div { gap: 0.5rem; }
-
 </style>
 """, unsafe_allow_html=True)
 
-# ==============================================================================
-# HERO HEADER
-# ==============================================================================
 st.markdown("""
-<div class="hero-header">
-    <div class="hero-content">
-        <div class="hero-icon">📈</div>
-        <div class="hero-text">
-            <h1>Inamikro Ad Generator <span style="color: #fbbf24;">V18 Pro</span></h1>
-            <div class="hero-sub">Platform Generator Copywriting & Komparasi Engine Visual Skripsi UMKM</div>
-        </div>
-    </div>
-    <div class="hero-badges">
-        <span class="hero-badge">⚡ Generasi Otomatis</span>
-        <span class="hero-badge">⚖️ AI Quality Control</span>
-        <span class="hero-badge">📊 KBLI Inamikro</span>
-    </div>
+<div class="main-header">
+    <h1>📈 Inamikro Ad Generator V18 Pro</h1>
+    <p>Platform Generator Copywriting & Komparasi Engine Visual Skripsi UMKM</p>
 </div>
 """, unsafe_allow_html=True)
 
 # ==============================================================================
-# DATA MASTER PROMPT & DATA KBLI UMKM
+# DATA MASTER PROMPT & DATA KBLI UMKM (DIPERLUAS)
 # ==============================================================================
 MASTER_PROMPT_PATH = Path(__file__).parent / "master_prompt_inamikro.md"
 
@@ -430,8 +125,6 @@ if "skripsi_data" not in st.session_state:
     st.session_state.skripsi_data = []
 if "daftar_produk_umkm" not in st.session_state:
     st.session_state.daftar_produk_umkm = []
-if "current_step" not in st.session_state:
-    st.session_state.current_step = 1
 
 # ==============================================================================
 # FUNGSI PENANGANAN KREDENSIAL GCP & FIRESTORE
@@ -467,10 +160,10 @@ class GeminiStudioWrapper:
         try:
             genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
             model = genai.GenerativeModel(self.model_name, generation_config=genai.types.GenerationConfig(temperature=self.temperature))
-
+            
             contents = []
             msg = messages[0] if isinstance(messages, list) else messages
-
+            
             if hasattr(msg, 'content') and isinstance(msg.content, list):
                 for part in msg.content:
                     if part.get("type") == "text": contents.append(part.get("text", ""))
@@ -546,11 +239,11 @@ def generate_ad_text_master(kategori, brand_name, keywords_list, gaya, platform,
     context = build_context_block(kategori, brand_name, keywords_list, gaya, platform, market, mood, background, subjek, elemen_wajib, mode_promo, nama_produk_global, harga_global, promo_global, list_produk, photo_descriptions)
     fidelity = "\n=== ATURAN VISUAL ===\nIde Visual HARUS mereplikasi BENTUK produk dari foto referensi persis.\n" if images_bytes_list else ""
     full_prompt = f"{MASTER_PROMPT_FULL}\n{context}\n{fidelity}\n=== TUGAS: Buat Teks Iklan {platform} ==="
-
+    
     parts = [{"type": "text", "text": full_prompt}]
     for img_bytes in images_bytes_list:
         parts.append({"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64.b64encode(img_bytes).decode('utf-8')}"}})
-
+    
     class DummyMsg:
         def __init__(self, content): self.content = content
     return llm_generator.invoke([DummyMsg(parts)]).content
@@ -559,7 +252,7 @@ def generate_ad_text_master(kategori, brand_name, keywords_list, gaya, platform,
 def generate_ad_revision_master(main_txt, vis_prompt, revisi_input):
     old_output = f"{main_txt}\n\n**Ide Visual:**\n{vis_prompt}"
     prompt = f"""Kamu adalah Agen Pakar Marketing UMKM.
-
+    
 === HASIL IKLAN SEBELUMNYA ===
 {old_output}
 
@@ -567,7 +260,7 @@ def generate_ad_revision_master(main_txt, vis_prompt, revisi_input):
 "{revisi_input}"
 
 TUGAS:
-Lakukan revisi HANYA pada bagian yang diminta. Jangan merombak total gaya bahasa yang sudah ada.
+Lakukan revisi HANYA pada bagian yang diminta. Jangan merombak total gaya bahasa yang sudah ada. 
 Pastikan output akhir TETAP mengikuti format baku (ada Headline, Caption, Hashtags, dan bagian **Ide Visual:** di paling bawah untuk instruksi gambar).
 """
     class DummyMsg:
@@ -590,7 +283,6 @@ ANALISIS PAKAR: [Berikan 2-3 kalimat penjelasan mengapa skor tersebut diberikan,
     class DummyMsg:
         def __init__(self, content): self.content = content
     return llm_generator.invoke([DummyMsg(prompt)]).content
-
 # ==============================================================================
 # MODEL GENERATOR OPENAI (GPT-IMAGE-2 / DALL-E)
 # ==============================================================================
@@ -599,12 +291,12 @@ def generate_dalle_image(prompt_text):
     try:
         client = openai.OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
         context_anchor = f"Commercial product advertisement photography for '{st.session_state.get('brand_name', 'UMKM')}' showing realistic products of {st.session_state.get('kategori', 'Product')}. Photorealistic, high quality, appetizing style, no abstract 3D figures, no geometric sculptures, "
-        safe_prompt = (context_anchor + prompt_text)[:900]
-
+        safe_prompt = (context_anchor + prompt_text)[:900] 
+        
         res = client.images.generate(model="gpt-image-2", prompt=safe_prompt, size="1024x1024", n=1)
-        if hasattr(res.data[0], 'url') and res.data[0].url:
+        if hasattr(res.data[0], 'url') and res.data[0].url: 
             return requests.get(res.data[0].url).content
-        if hasattr(res.data[0], 'b64_json') and res.data[0].b64_json:
+        if hasattr(res.data[0], 'b64_json') and res.data[0].b64_json: 
             return base64.b64decode(res.data[0].b64_json)
     except Exception as e:
         st.error(f"Gagal memproses GPT Image: {e}")
@@ -621,12 +313,13 @@ def apply_dynamic_branding(main_bytes, logo_file, posisi):
         nw = int(main_img.width * 0.18)
         nh = int(nw * (logo_img.height / logo_img.width))
         logo_img = logo_img.resize((nw, nh), Image.Resampling.LANCZOS)
-
+        
         pad = 28
         pos = (pad, pad)
         if "Kanan Atas" in posisi: pos = (main_img.width - nw - pad, pad)
         elif "Kanan Bawah" in posisi: pos = (main_img.width - nw - pad, main_img.height - nh - pad)
         elif "Kiri Bawah" in posisi: pos = (pad, main_img.height - nh - pad)
+        elif "Tengah Bawah" in posisi: pos = ((main_img.width - nw) // 2, main_img.height - nh - pad)
 
         res = main_img.copy()
         res.paste(logo_img, pos, logo_img)
@@ -644,140 +337,39 @@ if st.session_state.img_mem is None: st.session_state.img_mem = {"A": None}
 if st.session_state.chat_history is None: st.session_state.chat_history = []
 
 # ==============================================================================
-# HITUNG STEP AKTIF UNTUK STEPPER
-# ==============================================================================
-def get_active_step():
-    if st.session_state.get('main_txt') and st.session_state.img_mem.get('A'):
-        return 6
-    if st.session_state.get('main_txt'):
-        return 5
-    return 3
-
-active_step = get_active_step()
-
-# ==============================================================================
-# STEPPER VISUALISASI 6 LANGKAH
-# ==============================================================================
-steps_data = [
-    ("1", "Branding"),
-    ("2", "Produk"),
-    ("3", "Platform"),
-    ("4", "Copywriting"),
-    ("5", "Visual"),
-    ("6", "Revisi"),
-]
-
-stepper_html = '<div class="stepper-wrap"><div class="stepper">'
-for i, (num, label) in enumerate(steps_data, 1):
-    step_num = int(num)
-    if step_num < active_step:
-        cls_circle, cls_label, icon = "step-circle done", "step-label-txt", "✓"
-    elif step_num == active_step:
-        cls_circle, cls_label, icon = "step-circle active", "step-label-txt active", num
-    else:
-        cls_circle, cls_label, icon = "step-circle", "step-label-txt", num
-    stepper_html += f'<div class="step-item"><div class="{cls_circle}">{icon}</div><div class="{cls_label}">{label}</div></div>'
-stepper_html += '</div></div>'
-st.markdown(stepper_html, unsafe_allow_html=True)
-
-# ==============================================================================
-# SIDEBAR — STATUS & ADMIN
-# ==============================================================================
-db = get_firestore_client()
-with st.sidebar:
-    st.markdown('<div class="sidebar-title">⚙️ Status Sistem</div>', unsafe_allow_html=True)
-    st.markdown('<div class="sidebar-sub">Inamikro Skripsi Dashboard</div>', unsafe_allow_html=True)
-
-    db_status_text = "Database Cloud Terkoneksi" if db else "Mode Lokal Aktif"
-    db_emoji = "🟢" if db else "🟡"
-    st.markdown(f'''
-    <div class="sidebar-section">
-        <div class="sb-label">Database</div>
-        <div class="sb-value">{db_emoji} {db_status_text}</div>
-    </div>
-    ''', unsafe_allow_html=True)
-
-    n_items = len(st.session_state.daftar_produk_umkm)
-    n_logs = len(st.session_state.skripsi_data)
-    st.markdown(f'''
-    <div class="sidebar-section">
-        <div class="sb-label">Sesi Saat Ini</div>
-        <div class="sb-value">📦 {n_items} item produk</div>
-        <div class="sb-value" style="margin-top:0.3rem;">📊 {n_logs} log evaluasi</div>
-    </div>
-    ''', unsafe_allow_html=True)
-
-    st.markdown("---")
-    st.markdown('<div class="sb-label">📚 Tentang Skripsi</div>', unsafe_allow_html=True)
-    st.markdown("""
-    <div style="font-size: 0.82rem; line-height: 1.6; color: #c7d2fe;">
-    Sistem Pembuatan Konten Iklan Digital UMKM Otomatis Berbasis <b>Generative AI</b> dengan
-    pendekatan <b>multimodal LLM</b> dan <b>LLM-as-a-Judge</b> untuk Quality Control.
-    </div>
-    """, unsafe_allow_html=True)
-
-# ==============================================================================
 # USER INTERFACE LAYOUT
 # ==============================================================================
 col_f, col_r = st.columns([1, 1.35], gap="large")
 
-# ============================================================
 # --- KOLOM KIRI: INPUT DATA ---
-# ============================================================
 with col_f:
-    # --- LANGKAH 1: BRANDING ---
-    st.markdown("""
-    <div class="section-card-header">
-        <div class="section-num">1</div>
-        <div>
-            <div class="section-title">Identitas & Branding UMKM</div>
-            <div class="section-subtitle">Logo, posisi watermark, dan target market</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    db = get_firestore_client()
+    db_status = "✅ Database Cloud Terkoneksi" if db else "⚠️ Mode Lokal"
+    st.markdown(f'<div class="master-prompt-badge">🧠 {db_status}</div>', unsafe_allow_html=True)
 
+    st.markdown('<div class="step-label">📋 Langkah 1: Identitas & Branding UMKM</div>', unsafe_allow_html=True)
     with st.container(border=True):
         col_l1, col_l2 = st.columns([1.3, 1])
-        with col_l1:
-            logo_file = st.file_uploader("Upload Logo UMKM", type=['png', 'jpg'], help="Format PNG transparan paling direkomendasikan")
-        with col_l2:
-            posisi_logo = st.selectbox("Posisi Logo", ["Kanan Atas", "Kiri Atas", "Kanan Bawah", "Kiri Bawah", "Tengah Bawah"])
-        market = st.multiselect(
-            "🎯 Target Market",
-            ["Umum", "Mahasiswa", "Pekerja Kantoran", "Ibu Rumah Tangga", "Anak Sekolah / Remaja"],
-            default=["Umum"]
-        )
+        with col_l1: logo_file = st.file_uploader("Upload Logo", type=['png', 'jpg'])
+        with col_l2: posisi_logo = st.selectbox("Posisi Logo", ["Kanan Atas", "Kiri Atas", "Kanan Bawah", "Kiri Bawah", "Tengah Bawah"])
+        market = st.multiselect("Target Market", ["Umum", "Mahasiswa", "Pekerja Kantoran", "Ibu Rumah Tangga", "Anak Sekolah / Remaja"], default=["Umum"])
 
-    # --- LANGKAH 2: PRODUK ---
-    st.markdown("""
-    <div class="section-card-header">
-        <div class="section-num">2</div>
-        <div>
-            <div class="section-title">Data Produk & Manajemen Harga</div>
-            <div class="section-subtitle">Brand, USP, kategori KBLI, dan penawaran</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
+    st.markdown('<div class="step-label">📝 Langkah 2: Data Produk & Manajemen Harga</div>', unsafe_allow_html=True)
     with st.container(border=True):
-        brand_name = st.text_input("🏪 Nama Brand / Usaha UMKM", placeholder="Contoh: Bakso Mantap Jaya")
+        brand_name = st.text_input("Nama Brand / Usaha UMKM", placeholder="Masukkan nama usaha Anda")
         st.session_state['brand_name'] = brand_name
-
-        keywords_raw = st.text_input("⭐ Keywords USP Usaha", placeholder="tanpa pengawet, premium, isi tebal")
+        
+        keywords_raw = st.text_input("Keywords USP Usaha", placeholder="tanpa pengawet, premium, isi tebal")
         keywords = [k.strip() for k in keywords_raw.split(",") if k.strip()]
-        if keywords:
-            st.markdown(" ".join([f'<span class="kw-tag">✦ {k}</span>' for k in keywords]), unsafe_allow_html=True)
-
-        kategori = st.selectbox("📋 Kategori Usaha (KBLI)", list(KBLI_DATA.keys()))
+        if keywords: st.markdown(" ".join([f'<span class="kw-tag">{k}</span>' for k in keywords]), unsafe_allow_html=True)
+        
+        kategori = st.selectbox("Kategori Usaha", list(KBLI_DATA.keys()))
         st.session_state['kategori'] = kategori
-        st.markdown(f"<div class='kbli-desc'>📌 <b>Deskripsi Sektor:</b> {KBLI_DATA[kategori]['desc']}</div>", unsafe_allow_html=True)
-
-        st.markdown("<hr>", unsafe_allow_html=True)
-        mode_promo = st.radio(
-            "💸 Metode Penginputan Harga & Promo",
-            ["Diskon Sama untuk Semua (Global)", "Diskon Berbeda Per Item (Input Satu-Satu)"]
-        )
-
+        st.markdown(f"<div class='kbli-desc'>📌 <b>Sektor:</b> {KBLI_DATA[kategori]['desc']}</div>", unsafe_allow_html=True)
+        
+        st.write("---")
+        mode_promo = st.radio("Metode Penginputan Harga & Promo:", ["Diskon Sama untuk Semua (Global)", "Diskon Berbeda Per Item (Input Satu-Satu)"])
+        
         nama_produk_global = ""
         harga_global = 0
         promo_global = ""
@@ -786,297 +378,202 @@ with col_f:
             st.markdown("##### 🌍 Input Harga & Promo Massal (Global)")
             nama_produk_global = st.text_input("Nama Menu / Kelompok Produk", placeholder="Siomay, Gyoza, dan Dimsum Goreng")
             c_g1, c_g2 = st.columns(2)
-            with c_g1:
-                harga_global = st.number_input("Estimasi Harga Mulai (Rp)", min_value=0, value=30000, step=1000)
-            with c_g2:
-                promo_global = st.text_input("Promo Massal", placeholder="Beli 2 Gratis 1 / Diskon 10rb")
+            with c_g1: harga_global = st.number_input("Estimasi Harga Mulai (Rp)", min_value=0, value=30000, step=1000)
+            with c_g2: promo_global = st.text_input("Promo Massal", placeholder="Potongan 10rb porsi / Beli 2 Gratis 1")
         else:
             st.markdown("##### ➕ Input Item Manual Satu-per-Satu")
-            c_p1, c_p2, c_p3 = st.columns([1.5, 1.2, 1.3])
-            with c_p1: item_nama = st.text_input("Nama Item", placeholder="Siomay", key="input_item_nama")
-            with c_p2: item_harga = st.number_input("Harga (Rp)", min_value=0, value=15000, step=1000, key="input_item_harga")
-            with c_p3: item_promo = st.text_input("Promo", placeholder="Diskon 10rb", key="input_item_promo")
-
-            if st.button("➕ Tambah Item ke Daftar", use_container_width=True):
-                if item_nama:
-                    st.session_state.daftar_produk_umkm.append({"nama": item_nama, "harga": item_harga, "promo": item_promo})
-                    st.toast(f"✅ {item_nama} ditambahkan ke daftar!", icon="📝")
-
+            with st.container():
+                c_p1, c_p2, c_p3 = st.columns([1.5, 1.2, 1.3])
+                with c_p1: item_nama = st.text_input("Nama Item", placeholder="Siomay", key="input_item_nama")
+                with c_p2: item_harga = st.number_input("Harga Item (Rp)", min_value=0, value=15000, step=1000, key="input_item_harga")
+                with c_p3: item_promo = st.text_input("Potongan/Promo", placeholder="Diskon 10rb", key="input_item_promo")
+                
+                if st.button("➕ Tambah Item", use_container_width=True):
+                    if item_nama:
+                        st.session_state.daftar_produk_umkm.append({"nama": item_nama, "harga": item_harga, "promo": item_promo})
+                        st.toast(f"{item_nama} ditambahkan!", icon="📝")
             if st.session_state.daftar_produk_umkm:
-                st.dataframe(pd.DataFrame(st.session_state.daftar_produk_umkm), use_container_width=True, hide_index=True)
-                if st.button("🗑️ Kosongkan Daftar Item", type="secondary", use_container_width=True):
+                st.dataframe(pd.DataFrame(st.session_state.daftar_produk_umkm), use_container_width=True)
+                if st.button("🗑️ Kosongkan Daftar Item", type="secondary"): 
                     st.session_state.daftar_produk_umkm = []
                     st.rerun()
 
-        st.markdown("<hr>", unsafe_allow_html=True)
-        foto_produk = st.file_uploader("📷 Upload Foto Referensi Produk", type=['png', 'jpg'], accept_multiple_files=True, help="Maksimal 3 foto. AI akan menganalisa bentuk fisik produk")
+        st.write("---")
+        foto_produk = st.file_uploader("Upload Foto Referensi", type=['png', 'jpg'], accept_multiple_files=True)
         foto_desc = []
         if foto_produk:
-            st.markdown('<div class="photo-caption-box">🏷️ <b>Beri keterangan singkat tiap foto</b> agar AI lebih akurat</div>', unsafe_allow_html=True)
+            st.markdown('<div class="photo-caption-box">🏷️ <b>Beri keterangan singkat tiap foto</b></div>', unsafe_allow_html=True)
             for i, f in enumerate(foto_produk[:3]):
                 c1, c2 = st.columns([1, 2.5])
                 with c1: st.image(f, use_container_width=True)
-                with c2: foto_desc.append(st.text_input(f"Keterangan Foto {i+1}", key=f"f_{i}", placeholder=f"Contoh: Bakso sapi premium", label_visibility="collapsed"))
+                with c2: foto_desc.append(st.text_input(f"Desc Foto {i+1}", key=f"f_{i}", label_visibility="collapsed"))
 
-    # --- LANGKAH 3: PLATFORM ---
-    st.markdown("""
-    <div class="section-card-header">
-        <div class="section-num">3</div>
-        <div>
-            <div class="section-title">Strategi Platform & Visual</div>
-            <div class="section-subtitle">Platform target, tone, mood, dan komposisi visual</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
+    st.markdown('<div class="step-label">🎯 Langkah 3: Strategi Platform</div>', unsafe_allow_html=True)
     with st.container(border=True):
-        platform = st.radio("📱 Platform Target", ["Instagram", "WhatsApp", "TikTok"], horizontal=True)
+        platform = st.radio("Platform", ["Instagram", "WhatsApp", "TikTok"])
         cs1, cs2 = st.columns(2)
-        with cs1: gaya = st.selectbox("✍️ Tone Copywriting", ["Santai & Kekinian", "Profesional", "Hard-Selling"])
-        with cs2: mood = st.selectbox("🌅 Mood Visual", ["Cerah", "Gelap Elegan", "Hangat"])
-        bg = st.selectbox("🖼️ Background Foto", list(BACKGROUND_OPTIONS.keys()))
-        subjek = st.selectbox("👤 Subjek Foto", ["Produk saja", "1 Orang", "Keluarga"])
+        with cs1: gaya = st.selectbox("Tone", ["Santai & Kekinian", "Profesional", "Hard-Selling"])
+        with cs2: mood = st.selectbox("Mood", ["Cerah", "Gelap Elegan", "Hangat"])
+        bg = st.selectbox("Background", list(BACKGROUND_OPTIONS.keys()))
+        subjek = st.selectbox("Subjek", ["Produk saja", "1 Orang", "Keluarga"])
 
-    st.markdown("<br>", unsafe_allow_html=True)
-    if st.button("🚀 GENERATE IKLAN OTOMATIS", type="primary", use_container_width=True):
-        if not brand_name:
-            st.warning("⚠️ Mohon isi nama brand/usaha terlebih dahulu!")
+    if st.button("🚀 GENERATE IKLAN", type="primary", use_container_width=True):
+        if not brand_name: 
+            st.warning("Isi nama brand/usaha dulu!")
         else:
             st.session_state.img_mem = {"A": None}
-            st.session_state.chat_history = []
-            st.session_state.ai_eval_result = None
-
-            with st.spinner("🤖 Agent 1: AI sedang meracik copywriting profesional..."):
+            st.session_state.chat_history = [] # Reset riwayat chat untuk generate baru
+            st.session_state.ai_eval_result = None # Reset hasil evaluasi lama
+            
+            with st.spinner("🤖 Agent 1: AI sedang meracik copywriting..."):
                 img_bytes = [f.getvalue() for f in foto_produk] if foto_produk else []
                 res = generate_ad_text_master(
-                    kategori, brand_name, keywords, gaya, platform, market, mood, bg, subjek, img_bytes,
-                    get_elemen_wajib(kategori), mode_promo, nama_produk_global, harga_global, promo_global,
+                    kategori, brand_name, keywords, gaya, platform, market, mood, bg, subjek, img_bytes, 
+                    get_elemen_wajib(kategori), mode_promo, nama_produk_global, harga_global, promo_global, 
                     st.session_state.daftar_produk_umkm, foto_desc
                 )
                 vis, txt = parse_output_for_image(res)
                 st.session_state.main_txt, st.session_state.vis_prompt = txt, vis
                 st.session_state.last_p = {"nama": brand_name, "plat": platform}
-
-            with st.spinner("⚖️ Agent 2: Mengevaluasi kualitas iklan (Quality Control)..."):
+                
+            # AGENT 2 OTOMATIS BERJALAN SETELAH AGENT 1 SELESAI
+            with st.spinner("⚖️ Agent 2: Mengevaluasi kualitas (Quality Control)..."):
                 hasil_evaluasi = evaluate_ad_quality_master(kategori, txt)
                 st.session_state.ai_eval_result = hasil_evaluasi
-            st.rerun()
 
-# ============================================================
 # --- KOLOM KANAN: OUTPUT & REVISI ---
-# ============================================================
 with col_r:
-    # --- LANGKAH 4: COPYWRITING ---
-    st.markdown("""
-    <div class="section-card-header">
-        <div class="section-num">4</div>
-        <div>
-            <div class="section-title">Copywriting Hasil AI</div>
-            <div class="section-subtitle">Naskah iklan otomatis siap publikasi</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
+    st.markdown('<div class="step-label">📱 Langkah 4: Copywriting Hasil AI</div>', unsafe_allow_html=True)
     if st.session_state.main_txt:
         with st.container(border=True):
-            edit_mode = st.toggle("✏️ Mode Edit Manual", help="Aktifkan untuk mengedit teks secara langsung")
-
+            # FITUR 2-WAY: Sakelar untuk mengubah mode tampilan
+            edit_mode = st.toggle("✏️ Mode Edit Manual")
+            
             if edit_mode:
-                st.info("💡 Edit teks di bawah. Matikan sakelar untuk melihat hasil rapinya.")
+                # Jika sakelar ON: Munculkan kotak ketik
+                st.info("💡 Silakan ketik/edit teks di bawah ini. Matikan sakelar untuk melihat hasil rapinya kembali.")
                 st.session_state.main_txt = st.text_area(
-                    "Edit Teks Copywriting",
-                    value=st.session_state.main_txt,
-                    height=350,
+                    "Edit Teks Copywriting", 
+                    value=st.session_state.main_txt, 
+                    height=350, 
                     label_visibility="collapsed"
                 )
             else:
+                # Jika sakelar OFF: Tampilkan versi elegan (Markdown)
                 st.markdown(st.session_state.main_txt)
-
-            # QC PANEL
+            
+            # --- FITUR UX: SERTIFIKAT LULUS QC DARI AI EVALUATOR ---
             if st.session_state.get('ai_eval_result'):
-                st.markdown("""
-                <div class="qc-card">
-                    <div class="qc-icon">✅</div>
-                    <div>
-                        <div class="qc-title">Lulus Uji Kualitas Pakar AI</div>
-                        <div class="qc-sub">Quality Control oleh LLM-as-a-Judge Agent</div>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-                with st.expander("📊 Lihat Detail Analisis Pakar AI"):
+                st.divider()
+                st.success("✅ **Lulus Uji Kualitas Pakar AI (Quality Control)**")
+                with st.expander("📊 Lihat Detail Analisis (Opsional)"):
                     st.markdown(st.session_state.ai_eval_result)
+            
+        st.divider()
+        st.markdown('<div class="step-label">🎨 Langkah 5: Render Visual Final</div>', unsafe_allow_html=True)
+        
+        with st.expander("⚙️ Lihat/Edit Instruksi AI (Opsional)"):
+            st.session_state.vis_prompt = st.text_area(
+                "Instruksi Prompt Visual", 
+                value=st.session_state.vis_prompt, 
+                height=80, 
+                label_visibility="collapsed"
+            )
+        
+        st.info("💡 Sistem menggunakan AI GPT Image 2 (Dioptimalkan untuk teks promo dan poster komersial).")
+        if st.button("✨ Render Foto Studio (Otomatis)", type="primary", use_container_width=True):
+            with st.spinner("📸 Sedang di studio AI... Merender gambar (sekitar 10 detik)..."):
+                raw = generate_dalle_image(st.session_state.vis_prompt)
+                st.session_state.img_mem["A"] = apply_dynamic_branding(raw, logo_file, posisi_logo) if raw else None
+                
+        if st.session_state.img_mem["A"]:
+            st.success("✅ Gambar berhasil dibuat!")
+            st.image(st.session_state.img_mem["A"], caption="Hasil Render Final Inamikro")
+            st.download_button(
+                label="⬇️ Download Gambar Resolusi Tinggi", 
+                data=st.session_state.img_mem["A"], 
+                file_name=f"promo_{brand_name.replace(' ', '_') if brand_name else 'umkm'}.png", 
+                mime="image/png", 
+                use_container_width=True
+            )
 
-        st.markdown("<br>", unsafe_allow_html=True)
+        # =========================================================
+        # 💬 LANGKAH 6: CHATBOT REVISI AI
+        # =========================================================
+        st.divider()
+        st.markdown('<div class="step-label">💬 Langkah 6: Asisten Revisi AI (Otomatis)</div>', unsafe_allow_html=True)
+        st.caption("Kurang pas? Ketik perintah di bawah (misal: 'Tambahkan nomor WA 08123', 'Tambahkan tulisan Buy 1 Get 1 di gambar').")
+        
+        for msg in st.session_state.chat_history:
+            with st.chat_message(msg["role"]): st.markdown(msg["content"])
 
-        # --- LANGKAH 5: VISUAL ---
-        st.markdown("""
-        <div class="section-card-header">
-            <div class="section-num">5</div>
-            <div>
-                <div class="section-title">Render Visual Final</div>
-                <div class="section-subtitle">Fotografi komersial otomatis dengan AI</div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        with st.container(border=True):
-            with st.expander("⚙️ Lihat/Edit Instruksi Visual AI (Opsional)"):
-                st.session_state.vis_prompt = st.text_area(
-                    "Instruksi Prompt Visual",
-                    value=st.session_state.vis_prompt,
-                    height=100,
-                    label_visibility="collapsed"
-                )
-
-            st.info("💡 Klik tombol di bawah untuk membuat foto promosi profesional secara otomatis.")
-
-            if st.button("✨ Render Foto Studio (Otomatis)", type="primary", use_container_width=True):
-                with st.spinner("📸 Sedang di studio AI... Merender gambar (sekitar 10 detik)..."):
-                    raw = generate_dalle_image(st.session_state.vis_prompt)
-                    st.session_state.img_mem["A"] = apply_dynamic_branding(raw, logo_file, posisi_logo) if raw else None
+        revisi_input = st.chat_input("Ketik instruksi revisi di sini...")
+        if revisi_input:
+            st.session_state.chat_history.append({"role": "user", "content": revisi_input})
+            with st.spinner("🧠 AI sedang merevisi naskah & visual..."):
+                new_raw = generate_ad_revision_master(st.session_state.main_txt, st.session_state.vis_prompt, revisi_input)
+                new_vis, new_txt = parse_output_for_image(new_raw)
+                
+                st.session_state.main_txt = new_txt
+                st.session_state.vis_prompt = new_vis
+                st.session_state.img_mem["A"] = None # Reset gambar lama
+                
+                st.session_state.chat_history.append({"role": "assistant", "content": "✅ Revisi selesai! Hasil teks di **Langkah 4** dan instruksi gambar di **Langkah 5** sudah saya perbarui. Silakan Render Ulang gambarnya."})
                 st.rerun()
 
-            if st.session_state.img_mem["A"]:
-                st.success("✅ Gambar berhasil dibuat!")
-                st.image(st.session_state.img_mem["A"], caption="🎨 Hasil Render Final Inamikro", use_container_width=True)
-                st.download_button(
-                    label="⬇️ Download Gambar Resolusi Tinggi",
-                    data=st.session_state.img_mem["A"],
-                    file_name=f"promo_{brand_name.replace(' ', '_') if brand_name else 'umkm'}.png",
-                    mime="image/png",
-                    use_container_width=True
-                )
-
-        st.markdown("<br>", unsafe_allow_html=True)
-
-        # --- LANGKAH 6: REVISI ---
-        st.markdown("""
-        <div class="section-card-header">
-            <div class="section-num">6</div>
-            <div>
-                <div class="section-title">Asisten Revisi AI</div>
-                <div class="section-subtitle">Chatbot untuk perbaikan otomatis naskah & visual</div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        with st.container(border=True):
-            st.caption("💬 Kurang pas? Ketik perintah revisi — misal: *'Tambahkan nomor WA 08123'* atau *'Buat tone lebih formal'*")
-
-            for msg in st.session_state.chat_history:
-                with st.chat_message(msg["role"]):
-                    st.markdown(msg["content"])
-
-            revisi_input = st.chat_input("Ketik instruksi revisi di sini...")
-            if revisi_input:
-                st.session_state.chat_history.append({"role": "user", "content": revisi_input})
-                with st.spinner("🧠 AI sedang merevisi naskah & visual..."):
-                    new_raw = generate_ad_revision_master(st.session_state.main_txt, st.session_state.vis_prompt, revisi_input)
-                    new_vis, new_txt = parse_output_for_image(new_raw)
-
-                    st.session_state.main_txt = new_txt
-                    st.session_state.vis_prompt = new_vis
-                    st.session_state.img_mem["A"] = None
-
-                    st.session_state.chat_history.append({
-                        "role": "assistant",
-                        "content": "✅ **Revisi selesai!** Hasil teks di **Langkah 4** dan instruksi gambar di **Langkah 5** sudah saya perbarui. Silakan Render Ulang gambarnya."
-                    })
-                    st.rerun()
-
-        st.markdown("<br>", unsafe_allow_html=True)
-
-        # --- ADMIN & EVALUASI DOSEN ---
+        # ==============================================================================
+        # 📊 ADMIN PANEL & FORM EVALUASI DOSEN (TERSEMBUNYI)
+        # ==============================================================================
+        st.divider()
+        
+        # Tarik data log dari Cloud (jika ada)
         cloud_data = []
         if db:
             try: cloud_data = [doc.to_dict() for doc in db.collection("evaluasi_skripsi").stream()]
             except Exception: pass
-
+            
         final_log_list = cloud_data if db else st.session_state.skripsi_data
-
+        
+        # SEMBUNYIKAN SEMUANYA DI DALAM MENU LIPAT BER-PIN
         with st.expander("🔐 Menu Admin & Evaluasi Pakar (Khusus Penguji)"):
-            admin_pin = st.text_input("Masukkan PIN Admin:", type="password", placeholder="••••••••")
-
+            admin_pin = st.text_input("Masukkan PIN Admin:", type="password")
+            
             if admin_pin == "skripsiA":
                 st.success("✅ Akses Admin Terbuka!")
-
-                # Metric cards
-                n_total = len(final_log_list)
-                avg_score = 0
-                if final_log_list:
-                    scores = [d.get("Skor Kelayakan", 0) for d in final_log_list if isinstance(d.get("Skor Kelayakan"), (int, float))]
-                    avg_score = round(sum(scores) / len(scores), 1) if scores else 0
-                n_bidang = len(set([d.get("Bidang", "") for d in final_log_list]))
-
-                st.markdown(f"""
-                <div class="metric-grid">
-                    <div class="metric-card">
-                        <div class="metric-val">{n_total}</div>
-                        <div class="metric-lbl">Total Pengujian</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-val">{avg_score}</div>
-                        <div class="metric-lbl">Rata-rata Skor</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-val">{n_bidang}</div>
-                        <div class="metric-lbl">Bidang Diuji</div>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-
-                st.markdown("### 📝 Form Penilaian UAT (Dosen / Pakar)")
+                
+                # --- 1. FORM EVALUASI (Hanya muncul jika PIN benar) ---
+                st.markdown("### 📝 Form Penilaian UAT (Dosen/Pakar)")
                 with st.form("gform_mokap", clear_on_submit=True):
                     f_bidang = st.selectbox("Bidang Hasil Pengujian", ["Bidang Food & Beverages", "Bidang Fashion", "Bidang Jasa"])
                     f_tester = st.text_input("Nama Penilai", value="Dosen Pembimbing")
-                    f_catatan = st.text_area("Catatan Evaluasi", placeholder="Tuliskan catatan evaluasi terhadap hasil iklan...")
+                    f_catatan = st.text_area("Catatan Evaluasi")
                     f_skor = st.slider("Skor Kelayakan Hasil (1 - 100)", 1, 100, 85)
-
-                    if st.form_submit_button("📁 Simpan Data Pengujian", use_container_width=True, type="primary"):
-                        new_entry = {
-                            "Waktu": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                            "Bidang": f_bidang,
-                            "Nama Usaha": brand_name,
-                            "Platform Target": st.session_state.last_p["plat"] if st.session_state.last_p else "N/A",
-                            "Tester": f_tester,
-                            "Catatan Evaluasi": f_catatan,
-                            "Skor Kelayakan": f_skor
-                        }
+                    
+                    if st.form_submit_button("📁 Simpan Data Pengujian", use_container_width=True):
+                        new_entry = {"Waktu": datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "Bidang": f_bidang, "Nama Usaha": brand_name, "Platform Target": st.session_state.last_p["plat"] if st.session_state.last_p else "N/A", "Tester": f_tester, "Catatan Evaluasi": f_catatan, "Skor Kelayakan": f_skor}
                         if db:
-                            try:
+                            try: 
                                 db.collection("evaluasi_skripsi").add(new_entry)
-                                st.toast("✅ Tersimpan di Cloud!", icon="💾")
+                                st.toast("Tersimpan di Cloud!", icon="💾")
                             except Exception as e: st.error(f"Gagal: {e}")
                         else:
                             st.session_state.skripsi_data.append(new_entry)
-                            st.toast("✅ Tersimpan lokal.", icon="💾")
-
-                st.markdown("<hr>", unsafe_allow_html=True)
+                            st.toast("Tersimpan lokal.", icon="💾")
+                
+                st.divider()
+                
+                # --- 2. TABEL LOG DATABASE PENGUJIAN ---
                 st.markdown("### 🗄️ Log Database Pengujian")
                 if final_log_list:
                     df_log = pd.DataFrame(final_log_list)
-                    if "Waktu" in df_log.columns:
-                        df_log = df_log.sort_values(by="Waktu", ascending=False).reset_index(drop=True)
-                    st.dataframe(df_log, use_container_width=True, hide_index=True)
-                    st.download_button(
-                        "📥 Download Data .CSV",
-                        data=df_log.to_csv(index=False).encode('utf-8'),
-                        file_name="log_skripsi.csv",
-                        mime="text/csv",
-                        use_container_width=True
-                    )
+                    if "Waktu" in df_log.columns: df_log = df_log.sort_values(by="Waktu", ascending=False).reset_index(drop=True)
+                    st.dataframe(df_log, use_container_width=True)
+                    st.download_button("📥 Download .CSV", data=df_log.to_csv(index=False).encode('utf-8'), file_name="log_skripsi.csv", mime="text/csv", use_container_width=True)
                 else:
-                    st.info("ℹ️ Belum ada data pengujian yang tersimpan.")
-
-            elif admin_pin:
-                st.error("⚠️ PIN Salah! Akses ditolak.")
+                    st.info("Belum ada data pengujian yang tersimpan.")
+                    
+            elif admin_pin: 
+                st.error("⚠️ PIN Salah!")
 
     else:
-        # Empty state
-        st.markdown("""
-        <div class="empty-state">
-            <div class="empty-icon">📋</div>
-            <div class="empty-title">Belum Ada Hasil Iklan</div>
-            <div class="empty-sub">Lengkapi data di kolom kiri (Langkah 1–3), lalu tekan tombol<br><b>"🚀 GENERATE IKLAN OTOMATIS"</b> untuk memulai.</div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.info("👈 Silakan isi data di sebelah kiri lalu tekan Generate untuk memulai.")
