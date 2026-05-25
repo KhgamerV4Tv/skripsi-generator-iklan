@@ -98,6 +98,22 @@ st.markdown("""
         font-size: 0.75rem;
         font-weight: 600;
     }
+    /* ===== DISCLAIMER HERO ===== */
+    .hero-disclaimer {
+        margin-top: 1.2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        font-size: 0.78rem;
+        color: #a5b4fc;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 0.5rem 0.8rem;
+        border-radius: 8px;
+        width: fit-content;
+        position: relative;
+        z-index: 2;
+    }
 
     /* ===== STEP PROGRESS STEPPER ===== */
     .stepper-wrap {
@@ -127,14 +143,6 @@ st.markdown("""
         transition: all 0.3s;
         z-index: 2;
     }
-    .step-circle.active {
-        background: linear-gradient(135deg, #4f46e5, #7c3aed);
-        color: #fff; border-color: #4f46e5;
-        box-shadow: 0 4px 12px -2px rgba(79, 70, 229, 0.5);
-    }
-    .step-circle.done {
-        background: #10b981; color: #fff; border-color: #10b981;
-    }
     .step-label-txt {
         font-size: 0.7rem; color: #64748b;
         margin-top: 0.4rem; font-weight: 600;
@@ -146,6 +154,26 @@ st.markdown("""
         height: 2px; background: #e2e8f0; z-index: 1;
     }
     .step-item:last-child .step-connector { display: none; }
+
+    /* ===== PERBAIKAN WARNA STEPPER PROGRESS BAR ===== */
+    .step-circle {
+        background: #334155 !important;
+        color: #94a3b8 !important;
+        border-color: #475569 !important;
+    }
+    .step-circle.active {
+        background: linear-gradient(135deg, #4f46e5, #7c3aed) !important;
+        color: #ffffff !important; 
+        border-color: #6d28d9 !important;
+        box-shadow: 0 0 15px rgba(124, 58, 237, 0.4) !important;
+    }
+    .step-circle.done {
+        background: linear-gradient(135deg, #10b981, #059669) !important;
+        color: #ffffff !important; 
+        border-color: #047857 !important;
+        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2) !important;
+    }
+    .step-connector { background: #334155 !important; }
 
     /* ===== SECTION HEADER ===== */
     .section-card-header {
@@ -226,26 +254,6 @@ st.markdown("""
         box-shadow: 0 1px 3px rgba(14, 165, 233, 0.15);
     }
 
-    /* ===== STATUS BADGE ===== */
-    .status-badge {
-        display: inline-flex; align-items: center; gap: 0.5rem;
-        background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
-        border: 1px solid #d8b4fe;
-        border-radius: 10px;
-        padding: 0.6rem 1rem;
-        font-size: 0.82rem;
-        color: #6b21a8;
-        font-weight: 600;
-        margin-bottom: 1.2rem;
-        width: 100%;
-        justify-content: center;
-    }
-    .status-badge.connected {
-        background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-        border-color: #86efac;
-        color: #166534;
-    }
-
     /* ===== BUTTONS ===== */
     .stButton > button {
         border-radius: 12px !important;
@@ -258,15 +266,17 @@ st.markdown("""
         border: none !important;
         box-shadow: 0 4px 14px -2px rgba(79, 70, 229, 0.45) !important;
         padding: 0.7rem 1.2rem !important;
+        color: white !important;
     }
     .stButton > button[kind="primary"]:hover {
         transform: translateY(-1px);
         box-shadow: 0 8px 20px -2px rgba(79, 70, 229, 0.6) !important;
     }
 
-   /* ===== INPUTS & WIDGETS ===== */
+    /* ===== INPUTS & WIDGETS ===== */
     .stTextInput input, .stTextArea textarea, .stNumberInput input, 
-    .stSelectbox > div > div, .stMultiSelect > div > div,
+    .stSelectbox [data-baseweb="select"], 
+    .stMultiSelect [data-baseweb="select"],
     [data-testid="stFileUploaderDropzone"] {
         border-radius: 10px !important;
         border-color: rgba(128, 128, 128, 0.2) !important;
@@ -276,7 +286,7 @@ st.markdown("""
     }
 
     .stTextInput input:focus, .stTextArea textarea:focus, .stNumberInput input:focus,
-    .stSelectbox > div > div:focus, .stMultiSelect > div > div:focus {
+    .stSelectbox [data-baseweb="select"]:focus, .stMultiSelect [data-baseweb="select"]:focus {
         border-color: #4f46e5 !important;
         box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1) !important;
     }
@@ -293,9 +303,46 @@ st.markdown("""
         font-weight: 600 !important;
     }
 
-    .stMultiSelect div[data-baseweb="select"] span {
-        color: var(--text-color) !important;
+    /* --- PERBAIKAN FILE UPLOADER --- */
+    [data-testid="stFileUploaderDropzone"] div,
+    [data-testid="stFileUploaderDropzone"] p,
+    [data-testid="stFileUploaderDropzone"] small {
+        color: var(--text-color) !important; 
     }
+    
+    [data-testid="stFileUploaderDropzone"] button {
+        background-color: #4f46e5 !important; 
+        color: #ffffff !important;
+        border: none !important;
+        font-weight: 600 !important;
+    }
+
+    /* --- PERBAIKAN MULTISELECT TAG --- */
+    .stMultiSelect [data-baseweb="tag"] {
+        background-color: rgba(79, 70, 229, 0.15) !important; 
+        border: 1px solid #a78bfa !important;
+        border-radius: 6px !important;
+    }
+    .stMultiSelect [data-baseweb="tag"] span {
+        color: #4f46e5 !important; 
+        font-weight: 600 !important;
+    }
+
+    /* ===== PERBAIKAN TEKS RADIO BUTTON & SUB-HEADING ===== */
+    .stRadio [data-testid="stMarkdownContainer"] p {
+        color: var(--text-color, #f1f5f9) !important;
+        font-weight: 500 !important;
+    }
+
+    [data-testid="stMarkdownContainer"] h1,
+    [data-testid="stMarkdownContainer"] h2,
+    [data-testid="stMarkdownContainer"] h3,
+    [data-testid="stMarkdownContainer"] h4,
+    [data-testid="stMarkdownContainer"] h5,
+    [data-testid="stMarkdownContainer"] h6 {
+        color: var(--text-color, #f1f5f9) !important;
+    }
+
     /* ===== QC SUCCESS CARD ===== */
     .qc-card {
         background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
@@ -329,34 +376,6 @@ st.markdown("""
     .empty-title { font-size: 1.1rem; font-weight: 700; color: #475569; margin-bottom: 0.4rem; }
     .empty-sub { font-size: 0.88rem; color: #94a3b8; }
 
-    /* ===== SIDEBAR ===== */
-    [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #1e1b4b 0%, #312e81 100%);
-    }
-    [data-testid="stSidebar"] * { color: #e0e7ff !important; }
-    [data-testid="stSidebar"] .sidebar-title {
-        font-size: 1.1rem; font-weight: 800;
-        color: #fff !important; margin-bottom: 0.3rem;
-    }
-    [data-testid="stSidebar"] .sidebar-sub {
-        font-size: 0.78rem; color: #a5b4fc !important; margin-bottom: 1.2rem;
-    }
-    [data-testid="stSidebar"] .sidebar-section {
-        background: rgba(255, 255, 255, 0.06);
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        border-radius: 12px;
-        padding: 0.85rem 1rem;
-        margin-bottom: 0.8rem;
-    }
-    [data-testid="stSidebar"] .sb-label {
-        font-size: 0.72rem; color: #a5b4fc !important;
-        text-transform: uppercase; letter-spacing: 0.08em;
-        font-weight: 700; margin-bottom: 0.3rem;
-    }
-    [data-testid="stSidebar"] .sb-value {
-        font-size: 0.92rem; color: #fff !important; font-weight: 600;
-    }
-
     /* ===== METRIC CARDS ===== */
     .metric-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.7rem; margin: 0.8rem 0; }
     .metric-card {
@@ -369,56 +388,36 @@ st.markdown("""
     .metric-val { font-size: 1.4rem; font-weight: 800; color: #4f46e5; }
     .metric-lbl { font-size: 0.72rem; color: #64748b; font-weight: 600; margin-top: 0.2rem; }
 
-    /* ===== DIVIDERS ===== */
     hr { margin: 1.2rem 0 !important; border-color: #e2e8f0 !important; }
 
-    /* ===== CHAT MESSAGES ===== */
     [data-testid="stChatMessage"] {
         border-radius: 12px !important;
         padding: 0.9rem 1rem !important;
         margin-bottom: 0.6rem !important;
     }
 
-    /* ===== RADIO & SELECT POLISH ===== */
     .stRadio > div { gap: 0.5rem; }
 
     /* =============================================================
-       UNIVERSAL TEXT FIX — semua custom HTML pake Streamlit's theme variable
-       agar otomatis kontras di light ATAU dark mode
-       ============================================================= */
-    .section-title { color: var(--text-color) !important; }
-    .section-subtitle { color: var(--text-color) !important; opacity: 0.7; }
-    .empty-title { color: var(--text-color) !important; }
-    .empty-sub { color: var(--text-color) !important; opacity: 0.7; }
-    .step-label-txt { color: var(--text-color) !important; opacity: 0.7; }
-    .step-label-txt.active { color: #7c3aed !important; opacity: 1; }
-    .metric-lbl { color: var(--text-color) !important; opacity: 0.7; }
-    .metric-val { color: #7c3aed !important; }
-    .qc-title { color: #065f46 !important; }
-    .qc-sub { color: #047857 !important; }
-
-    /* =============================================================
-       DARK MODE ADAPTIVE — agar tetap rapi saat user pilih dark theme
+       DARK MODE ADAPTIVE
        ============================================================= */
     @media (prefers-color-scheme: dark) {
         [data-testid="stAppViewContainer"] {
             background: linear-gradient(180deg, #0f172a 0%, #1e1b4b 100%);
         }
-        /* Perbaikan teks label input di dark mode */
+        
         [data-testid="stWidgetLabel"] p, 
         [data-testid="stWidgetLabel"] div,
         label {
-            color: #f8fafc !important; /* Putih terang */
+            color: #f8fafc !important; 
         }
 
-        /* Container cards jadi dark slate */
         div[data-testid="stVerticalBlockBorderWithFormatting"] {
             background-color: #1e293b !important;
             border: 1px solid #334155 !important;
             box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.4) !important;
         }
 
-        /* Info boxes — adjust untuk dark */
         .kbli-desc {
             background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%) !important;
             color: #dbeafe !important;
@@ -437,32 +436,19 @@ st.markdown("""
         }
         .photo-caption-box * { color: #fed7aa !important; }
 
-        /* Keyword tags */
         .kw-tag {
             background: linear-gradient(135deg, #0c4a6e 0%, #075985 100%) !important;
             color: #bae6fd !important;
             border-color: #0369a1 !important;
         }
 
-        /* Section title & subtitle */
         .section-title { color: #f1f5f9 !important; }
         .section-subtitle { color: #94a3b8 !important; }
 
-        /* Stepper card */
-        .stepper-wrap {
-            background: #1e293b !important;
-            border-color: #334155 !important;
-        }
-        .step-circle {
-            background: #334155 !important;
-            color: #94a3b8 !important;
-            border-color: #475569 !important;
-        }
+        .stepper-wrap { background: #1e293b !important; border-color: #334155 !important; }
         .step-label-txt { color: #94a3b8 !important; }
         .step-label-txt.active { color: #a78bfa !important; }
-        .step-connector { background: #334155 !important; }
 
-        /* QC Card */
         .qc-card {
             background: linear-gradient(135deg, #064e3b 0%, #065f46 100%) !important;
             border-color: #10b981 !important;
@@ -470,15 +456,10 @@ st.markdown("""
         .qc-title { color: #d1fae5 !important; }
         .qc-sub { color: #6ee7b7 !important; }
 
-        /* Empty state */
-        .empty-state {
-            background: #1e293b !important;
-            border-color: #475569 !important;
-        }
+        .empty-state { background: #1e293b !important; border-color: #475569 !important; }
         .empty-title { color: #cbd5e1 !important; }
         .empty-sub { color: #94a3b8 !important; }
 
-        /* Metric cards */
         .metric-card {
             background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
             border-color: #334155 !important;
@@ -486,25 +467,34 @@ st.markdown("""
         .metric-val { color: #a78bfa !important; }
         .metric-lbl { color: #94a3b8 !important; }
 
-        /* Status badge */
-        .status-badge {
-            background: linear-gradient(135deg, #3b0764 0%, #581c87 100%) !important;
-            border-color: #a78bfa !important;
-            color: #e9d5ff !important;
-        }
-        .status-badge.connected {
-            background: linear-gradient(135deg, #064e3b 0%, #065f46 100%) !important;
-            border-color: #10b981 !important;
-            color: #d1fae5 !important;
-        }
-
         /* Inputs di dark mode */
         .stTextInput input, .stTextArea textarea, .stNumberInput input,
-        .stSelectbox > div > div, .stMultiSelect > div > div,
+        .stSelectbox [data-baseweb="select"], 
+        .stMultiSelect [data-baseweb="select"],
         [data-testid="stFileUploaderDropzone"] {
             background-color: #0f172a !important;
-            color: #f1f5f9 !important;
             border-color: #334155 !important;
+            color: #f1f5f9 !important;
+        }
+
+        [data-testid="stFileUploaderDropzone"] div,
+        [data-testid="stFileUploaderDropzone"] p,
+        [data-testid="stFileUploaderDropzone"] small {
+            color: #cbd5e1 !important;
+        }
+
+        .stMultiSelect [data-baseweb="tag"] { background-color: #4f46e5 !important; }
+        .stMultiSelect [data-baseweb="tag"] span { color: #ffffff !important; }
+        .stMultiSelect [data-baseweb="tag"] svg { fill: #ffffff !important; }
+
+        .stRadio [data-testid="stMarkdownContainer"] p,
+        [data-testid="stMarkdownContainer"] h1,
+        [data-testid="stMarkdownContainer"] h2,
+        [data-testid="stMarkdownContainer"] h3,
+        [data-testid="stMarkdownContainer"] h4,
+        [data-testid="stMarkdownContainer"] h5,
+        [data-testid="stMarkdownContainer"] h6 {
+            color: #f8fafc !important; 
         }
 
         hr { border-color: #334155 !important; }
@@ -515,21 +505,12 @@ st.markdown("""
         background: linear-gradient(180deg, #0f172a 0%, #1e1b4b 100%);
     }
     .stApp[data-theme="dark"] div[data-testid="stVerticalBlockBorderWithFormatting"] {
-        background-color: #1e293b !important;
-        border-color: #334155 !important;
-    }
-        .stApp[data-theme="dark"] [data-testid="stWidgetLabel"] p,
-    .stApp[data-theme="dark"] [data-testid="stWidgetLabel"] div,
-    .stApp[data-theme="dark"] label {
-        color: #f8fafc !important;
+        background-color: #1e293b !important; border-color: #334155 !important;
     }
     .stApp[data-theme="dark"] .section-title { color: #f1f5f9 !important; }
     .stApp[data-theme="dark"] .section-subtitle { color: #94a3b8 !important; }
     .stApp[data-theme="dark"] .stepper-wrap {
         background: #1e293b !important; border-color: #334155 !important;
-    }
-    .stApp[data-theme="dark"] .step-circle {
-        background: #334155 !important; color: #94a3b8 !important; border-color: #475569 !important;
     }
     .stApp[data-theme="dark"] .step-label-txt { color: #94a3b8 !important; }
     .stApp[data-theme="dark"] .empty-state {
@@ -542,95 +523,15 @@ st.markdown("""
     .stApp[data-theme="dark"] .kbli-desc {
         background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%) !important;
     }
-/* =============================================================
-       PERBAIKAN TEKS RADIO BUTTON & SUB-HEADING (MARKDOWN)
-       ============================================================= */
-    /* 1. Memperbaiki teks opsi Radio Button (Instagram, WhatsApp, Diskon, dll) */
-    .stRadio [data-testid="stMarkdownContainer"] p {
-        color: var(--text-color, #f1f5f9) !important;
-        font-weight: 500 !important;
-    }
-
-    /* 2. Memperbaiki teks Heading (h1-h6) pada st.markdown (seperti ##### Input Harga) */
-    [data-testid="stMarkdownContainer"] h1,
-    [data-testid="stMarkdownContainer"] h2,
-    [data-testid="stMarkdownContainer"] h3,
-    [data-testid="stMarkdownContainer"] h4,
-    [data-testid="stMarkdownContainer"] h5,
-    [data-testid="stMarkdownContainer"] h6 {
-        color: var(--text-color, #f1f5f9) !important;
-    }
-
-    /* 3. Paksaan mutlak khusus untuk mode gelap (Dark Mode Adaptive) */
-    @media (prefers-color-scheme: dark) {
-        .stRadio [data-testid="stMarkdownContainer"] p,
-        [data-testid="stMarkdownContainer"] h1,
-        [data-testid="stMarkdownContainer"] h2,
-        [data-testid="stMarkdownContainer"] h3,
-        [data-testid="stMarkdownContainer"] h4,
-        [data-testid="stMarkdownContainer"] h5,
-        [data-testid="stMarkdownContainer"] h6 {
-            color: #f8fafc !important; /* Paksa jadi putih terang */
-        }
-    }
-    
     .stApp[data-theme="dark"] .stRadio [data-testid="stMarkdownContainer"] p,
     .stApp[data-theme="dark"] [data-testid="stMarkdownContainer"] h1,
     .stApp[data-theme="dark"] [data-testid="stMarkdownContainer"] h2,
     .stApp[data-theme="dark"] [data-testid="stMarkdownContainer"] h3,
-    .stApp[data-theme="dark"] [data-theme="dark"] [data-testid="stMarkdownContainer"] h4,
+    .stApp[data-theme="dark"] [data-testid="stMarkdownContainer"] h4,
     .stApp[data-theme="dark"] [data-testid="stMarkdownContainer"] h5,
     .stApp[data-theme="dark"] [data-testid="stMarkdownContainer"] h6 {
-        color: #f8fafc !important; /* Paksa jadi putih terang */
+        color: #f8fafc !important; 
     }
-            /* =============================================================
-       PERBAIKAN WARNA STEPPER PROGRESS BAR (DARK MODE)
-       ============================================================= */
-    
-    /* 1. Step yang BELUM dilewati (Upcoming) */
-    .step-circle {
-        background: #334155 !important;
-        color: #94a3b8 !important;
-        border-color: #475569 !important;
-    }
-
-    /* 2. Step yang SEDANG aktif (Active - Ungu Menyala) */
-    .step-circle.active {
-        background: linear-gradient(135deg, #4f46e5, #7c3aed) !important;
-        color: #ffffff !important; 
-        border-color: #6d28d9 !important;
-        box-shadow: 0 0 15px rgba(124, 58, 237, 0.4) !important; /* Efek glow */
-    }
-
-    /* 3. Step yang SUDAH selesai (Done - Hijau) */
-    .step-circle.done {
-        background: linear-gradient(135deg, #10b981, #059669) !important;
-        color: #ffffff !important; 
-        border-color: #047857 !important;
-        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2) !important;
-    }
-
-    /* 4. Garis penghubung antar step */
-    .step-connector { 
-        background: #334155 !important; 
-    }
-      /* ===== DISCLAIMER HERO ===== */
-    .hero-disclaimer {
-        margin-top: 1.2rem;
-        display: flex;
-        align-items: center;
-        gap: 0.6rem;
-        font-size: 0.78rem;
-        color: #a5b4fc;
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        padding: 0.5rem 0.8rem;
-        border-radius: 8px;
-        width: fit-content;
-        position: relative;
-        z-index: 2;
-    }
-            
 </style>
 """, unsafe_allow_html=True)
 
@@ -652,8 +553,9 @@ st.markdown("""
         <span class="hero-badge">📊 KBLI Inamikro</span>
     </div>
     <div class="hero-disclaimer">
-        <span class="hero-disclaimer-icon">🔒</span> 
-<span><b>Aman & Privat:</b> Data dan foto yang diunggah hanya diproses secara <i>real-time</i> oleh sistem dan tidak disimpan.</span>    </div>
+        <span>🔒</span> 
+        <span><b>Aman & Privat:</b> Data dan foto yang diunggah hanya diproses secara <i>real-time</i> oleh sistem dan tidak disimpan oleh sistem .</span>
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -703,12 +605,18 @@ BACKGROUND_OPTIONS = {
     "🌸 Pastel Aesthetic": "soft pastel pink and cream aesthetic background",
 }
 
-if "skripsi_data" not in st.session_state:
-    st.session_state.skripsi_data = []
-if "daftar_produk_umkm" not in st.session_state:
-    st.session_state.daftar_produk_umkm = []
-if "current_step" not in st.session_state:
-    st.session_state.current_step = 1
+# ==============================================================================
+# INITIALIZE SESSION STATE
+# ==============================================================================
+for k in ['main_txt', 'vis_prompt', 'last_p', 'img_mem', 'chat_history']:
+    if k not in st.session_state: st.session_state[k] = None
+if st.session_state.img_mem is None: st.session_state.img_mem = {"A": None}
+if st.session_state.chat_history is None: st.session_state.chat_history = []
+
+# Tambahan untuk data skripsi
+if "skripsi_data" not in st.session_state: st.session_state.skripsi_data = []
+if "daftar_produk_umkm" not in st.session_state: st.session_state.daftar_produk_umkm = []
+if "usage_logs" not in st.session_state: st.session_state.usage_logs = []
 
 # ==============================================================================
 # FUNGSI PENANGANAN KREDENSIAL GCP & FIRESTORE
@@ -731,6 +639,23 @@ def get_firestore_client():
         if creds and project_id: return firestore.Client(project=project_id, credentials=creds)
     except Exception: pass
     return None
+
+db = get_firestore_client()
+
+# ==============================================================================
+# FUNGSI PENCATAT LOG PENGGUNAAN (TRAFFIC)
+# ==============================================================================
+def catat_aktivitas_sistem(aktivitas, nama_brand):
+    log_entry = {
+        "Waktu": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "Aktivitas": aktivitas,
+        "Nama Usaha": nama_brand
+    }
+    if db:
+        try: db.collection("log_penggunaan").add(log_entry)
+        except Exception: pass
+    else:
+        st.session_state.usage_logs.append(log_entry)
 
 # ==============================================================================
 # ENGINE GENERATOR TEKS GEMINI SDK
@@ -914,14 +839,6 @@ def apply_dynamic_branding(main_bytes, logo_file, posisi):
     except Exception: return main_bytes
 
 # ==============================================================================
-# INITIALIZE SESSION STATE
-# ==============================================================================
-for k in ['main_txt', 'vis_prompt', 'last_p', 'img_mem', 'chat_history']:
-    if k not in st.session_state: st.session_state[k] = None
-if st.session_state.img_mem is None: st.session_state.img_mem = {"A": None}
-if st.session_state.chat_history is None: st.session_state.chat_history = []
-
-# ==============================================================================
 # HITUNG STEP AKTIF UNTUK STEPPER
 # ==============================================================================
 def get_active_step():
@@ -958,41 +875,6 @@ for i, (num, label) in enumerate(steps_data, 1):
 stepper_html += '</div></div>'
 st.markdown(stepper_html, unsafe_allow_html=True)
 
-# ==============================================================================
-# SIDEBAR — STATUS & ADMIN
-# ==============================================================================
-db = get_firestore_client()
-with st.sidebar:
-    st.markdown('<div class="sidebar-title">⚙️ Status Sistem</div>', unsafe_allow_html=True)
-    st.markdown('<div class="sidebar-sub">Inamikro Skripsi Dashboard</div>', unsafe_allow_html=True)
-
-    db_status_text = "Database Cloud Terkoneksi" if db else "Mode Lokal Aktif"
-    db_emoji = "🟢" if db else "🟡"
-    st.markdown(f'''
-    <div class="sidebar-section">
-        <div class="sb-label">Database</div>
-        <div class="sb-value">{db_emoji} {db_status_text}</div>
-    </div>
-    ''', unsafe_allow_html=True)
-
-    n_items = len(st.session_state.daftar_produk_umkm)
-    n_logs = len(st.session_state.skripsi_data)
-    st.markdown(f'''
-    <div class="sidebar-section">
-        <div class="sb-label">Sesi Saat Ini</div>
-        <div class="sb-value">📦 {n_items} item produk</div>
-        <div class="sb-value" style="margin-top:0.3rem;">📊 {n_logs} log evaluasi</div>
-    </div>
-    ''', unsafe_allow_html=True)
-
-    st.markdown("---")
-    st.markdown('<div class="sb-label">📚 Tentang Skripsi</div>', unsafe_allow_html=True)
-    st.markdown("""
-    <div style="font-size: 0.82rem; line-height: 1.6; color: #c7d2fe;">
-    Sistem Pembuatan Konten Iklan Digital UMKM Otomatis Berbasis <b>Generative AI</b> dengan
-    pendekatan <b>multimodal LLM</b> dan <b>LLM-as-a-Judge</b> untuk Quality Control.
-    </div>
-    """, unsafe_allow_html=True)
 
 # ==============================================================================
 # USER INTERFACE LAYOUT
@@ -1134,6 +1016,7 @@ with col_f:
                 vis, txt = parse_output_for_image(res)
                 st.session_state.main_txt, st.session_state.vis_prompt = txt, vis
                 st.session_state.last_p = {"nama": brand_name, "plat": platform}
+                catat_aktivitas_sistem("Generate Copywriting", brand_name)
 
             with st.spinner("⚖️ Agent 2: Mengevaluasi kualitas iklan (Quality Control)..."):
                 hasil_evaluasi = evaluate_ad_quality_master(kategori, txt)
@@ -1212,6 +1095,7 @@ with col_r:
                 with st.spinner("📸 Sedang di studio AI... Merender gambar (sekitar 10 detik)..."):
                     raw = generate_dalle_image(st.session_state.vis_prompt)
                     st.session_state.img_mem["A"] = apply_dynamic_branding(raw, logo_file, posisi_logo) if raw else None
+                catat_aktivitas_sistem("Render Visual Image", st.session_state.get('brand_name', 'UMKM'))
                 st.rerun()
 
             if st.session_state.img_mem["A"]:
@@ -1262,89 +1146,98 @@ with col_r:
                     })
                     st.rerun()
 
+        # ============================================================
+        # --- FORM PENILAIAN UAT & ADMIN AREA ---
+        # ============================================================
+        st.markdown("<br><hr>", unsafe_allow_html=True)
+        st.markdown("### 📝 Form Penilaian UAT (Dosen / Pakar)")
+        st.caption("Silakan isi evaluasi kelayakan hasil *generate* AI di bawah ini untuk keperluan pengujian sistem.")
+        
+        with st.form("gform_mokap", clear_on_submit=True):
+            f_bidang = st.selectbox("Bidang Hasil Pengujian", ["Bidang Food & Beverages", "Bidang Fashion", "Bidang Jasa","Bidang lainnya"])
+            f_tester = st.text_input("Nama Penilai", value="", placeholder="Contoh: Nama Usaha ")
+            f_catatan = st.text_area("Catatan Evaluasi", placeholder="Tuliskan catatan evaluasi terhadap hasil iklan...")
+            f_skor = st.slider("Skor Kelayakan Hasil (1 - 100)", 1, 100, 85)
+
+            if st.form_submit_button("📁 Simpan Penilaian UAT", use_container_width=True, type="primary"):
+                new_entry = {
+                    "Waktu": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "Bidang": f_bidang,
+                    "Nama Usaha": brand_name if 'brand_name' in locals() else "N/A",
+                    "Platform Target": st.session_state.last_p["plat"] if st.session_state.last_p else "N/A",
+                    "Tester": f_tester,
+                    "Catatan Evaluasi": f_catatan,
+                    "Skor Kelayakan": f_skor
+                }
+                if db:
+                    try:
+                        db.collection("evaluasi_skripsi").add(new_entry)
+                        st.toast("✅ Penilaian tersimpan di Cloud!", icon="💾")
+                    except Exception as e: st.error(f"Gagal: {e}")
+                else:
+                    st.session_state.skripsi_data.append(new_entry)
+                    st.toast("✅ Penilaian tersimpan lokal.", icon="💾")
+
         st.markdown("<br>", unsafe_allow_html=True)
 
-        # --- ADMIN & EVALUASI DOSEN ---
-        cloud_data = []
+        # Ambil data Cloud untuk Admin
+        cloud_eval_data = []
+        cloud_usage_data = []
         if db:
-            try: cloud_data = [doc.to_dict() for doc in db.collection("evaluasi_skripsi").stream()]
+            try: 
+                cloud_eval_data = [doc.to_dict() for doc in db.collection("evaluasi_skripsi").stream()]
+                cloud_usage_data = [doc.to_dict() for doc in db.collection("log_penggunaan").stream()]
             except Exception: pass
 
-        final_log_list = cloud_data if db else st.session_state.skripsi_data
+        final_log_list = cloud_eval_data if db else st.session_state.skripsi_data
+        final_usage_list = cloud_usage_data if db else st.session_state.usage_logs
 
-        with st.expander("🔐 Menu Admin & Evaluasi Pakar (Khusus Penguji)"):
-            admin_pin = st.text_input("Masukkan PIN Admin:", type="password", placeholder="••••••••")
+        with st.expander("🔐 Menu Admin & Database Log"):
+            admin_pin = st.text_input("Masukkan PIN Admin:", type="password", placeholder="12345678")
 
-            if admin_pin == "skripsiA":
+            if admin_pin == "12345678":
                 st.success("✅ Akses Admin Terbuka!")
 
-                # Metric cards
-                n_total = len(final_log_list)
-                avg_score = 0
-                if final_log_list:
-                    scores = [d.get("Skor Kelayakan", 0) for d in final_log_list if isinstance(d.get("Skor Kelayakan"), (int, float))]
-                    avg_score = round(sum(scores) / len(scores), 1) if scores else 0
-                n_bidang = len(set([d.get("Bidang", "") for d in final_log_list]))
+                # Status Sistem
+                st.markdown("#### ⚙️ Status Sistem & Sesi")
+                db_status_text = "Database Cloud Terkoneksi" if db else "Mode Lokal Aktif"
+                db_emoji = "🟢" if db else "🟡"
+                
+                col_s1, col_s2 = st.columns(2)
+                with col_s1:
+                    st.markdown(f"**Koneksi Database:**<br>{db_emoji} {db_status_text}", unsafe_allow_html=True)
+                with col_s2:
+                    st.markdown(f"**Total Trafik Sistem:**<br>⚡ {len(final_usage_list)} Interaksi AI", unsafe_allow_html=True)
+                st.markdown("<hr>", unsafe_allow_html=True)
 
-                st.markdown(f"""
-                <div class="metric-grid">
-                    <div class="metric-card">
-                        <div class="metric-val">{n_total}</div>
-                        <div class="metric-lbl">Total Pengujian</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-val">{avg_score}</div>
-                        <div class="metric-lbl">Rata-rata Skor</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-val">{n_bidang}</div>
-                        <div class="metric-lbl">Bidang Diuji</div>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-
-                st.markdown("### 📝 Form Penilaian UAT (Dosen / Pakar)")
-                with st.form("gform_mokap", clear_on_submit=True):
-                    f_bidang = st.selectbox("Bidang Hasil Pengujian", ["Bidang Food & Beverages", "Bidang Fashion", "Bidang Jasa"])
-                    f_tester = st.text_input("Nama Penilai", value="Dosen Pembimbing")
-                    f_catatan = st.text_area("Catatan Evaluasi", placeholder="Tuliskan catatan evaluasi terhadap hasil iklan...")
-                    f_skor = st.slider("Skor Kelayakan Hasil (1 - 100)", 1, 100, 85)
-
-                    if st.form_submit_button("📁 Simpan Data Pengujian", use_container_width=True, type="primary"):
-                        new_entry = {
-                            "Waktu": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                            "Bidang": f_bidang,
-                            "Nama Usaha": brand_name,
-                            "Platform Target": st.session_state.last_p["plat"] if st.session_state.last_p else "N/A",
-                            "Tester": f_tester,
-                            "Catatan Evaluasi": f_catatan,
-                            "Skor Kelayakan": f_skor
-                        }
-                        if db:
-                            try:
-                                db.collection("evaluasi_skripsi").add(new_entry)
-                                st.toast("✅ Tersimpan di Cloud!", icon="💾")
-                            except Exception as e: st.error(f"Gagal: {e}")
-                        else:
-                            st.session_state.skripsi_data.append(new_entry)
-                            st.toast("✅ Tersimpan lokal.", icon="💾")
+                # TABEL LOG PENGGUNAAN AKTIVITAS
+                st.markdown("#### 📡 Log Interaksi AI (Traffic)")
+                if final_usage_list:
+                    df_usage = pd.DataFrame(final_usage_list)
+                    if "Waktu" in df_usage.columns:
+                        df_usage = df_usage.sort_values(by="Waktu", ascending=False).reset_index(drop=True)
+                    st.dataframe(df_usage, use_container_width=True, hide_index=True, height=200)
+                else:
+                    st.info("Belum ada log penggunaan.")
 
                 st.markdown("<hr>", unsafe_allow_html=True)
-                st.markdown("### 🗄️ Log Database Pengujian")
+
+                # TABEL LOG EVALUASI UAT
+                st.markdown("#### 🗄️ Database Hasil Penilaian UAT")
                 if final_log_list:
                     df_log = pd.DataFrame(final_log_list)
                     if "Waktu" in df_log.columns:
                         df_log = df_log.sort_values(by="Waktu", ascending=False).reset_index(drop=True)
                     st.dataframe(df_log, use_container_width=True, hide_index=True)
                     st.download_button(
-                        "📥 Download Data .CSV",
+                        "📥 Download Data UAT (.CSV)",
                         data=df_log.to_csv(index=False).encode('utf-8'),
-                        file_name="log_skripsi.csv",
+                        file_name="hasil_uat_skripsi.csv",
                         mime="text/csv",
                         use_container_width=True
                     )
                 else:
-                    st.info("ℹ️ Belum ada data pengujian yang tersimpan.")
+                    st.info("ℹ️ Belum ada data penilaian UAT yang tersimpan.")
 
             elif admin_pin:
                 st.error("⚠️ PIN Salah! Akses ditolak.")
