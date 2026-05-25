@@ -614,6 +614,23 @@ st.markdown("""
     .step-connector { 
         background: #334155 !important; 
     }
+      /* ===== DISCLAIMER HERO ===== */
+    .hero-disclaimer {
+        margin-top: 1.2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        font-size: 0.78rem;
+        color: #a5b4fc;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 0.5rem 0.8rem;
+        border-radius: 8px;
+        width: fit-content;
+        position: relative;
+        z-index: 2;
+    }
+            
 </style>
 """, unsafe_allow_html=True)
 
@@ -634,6 +651,9 @@ st.markdown("""
         <span class="hero-badge">⚖️ AI Quality Control</span>
         <span class="hero-badge">📊 KBLI Inamikro</span>
     </div>
+    <div class="hero-disclaimer">
+        <span class="hero-disclaimer-icon">🔒</span> 
+<span><b>Aman & Privat:</b> Data dan foto yang diunggah hanya diproses secara <i>real-time</i> oleh sistem dan tidak disimpan.</span>    </div>
 </div>
 """, unsafe_allow_html=True)
 
