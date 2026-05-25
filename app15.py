@@ -35,7 +35,7 @@ st.markdown("""
     }
 
     [data-testid="stAppViewContainer"] {
-        background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+        background: var(--background-color);
     }
 
     /* Sembunyikan footer Streamlit, biarkan menu titik 3 muncul untuk ganti theme */
@@ -101,12 +101,12 @@ st.markdown("""
 
     /* ===== STEP PROGRESS STEPPER ===== */
     .stepper-wrap {
-        background: #ffffff;
+        background: var(--secondary-background-color, #ffffff);
         border-radius: 16px;
         padding: 1.1rem 1.3rem;
         margin-bottom: 1.5rem;
         box-shadow: 0 2px 8px -2px rgba(15, 23, 42, 0.08);
-        border: 1px solid #e2e8f0;
+        border: 1px solid rgba(128, 128, 128, 0.2);
     }
     .stepper {
         display: flex; justify-content: space-between; align-items: center;
@@ -163,18 +163,22 @@ st.markdown("""
         flex-shrink: 0;
     }
     .section-title {
-        font-size: 1.05rem; font-weight: 700; color: #1e293b;
+        font-size: 1.05rem; font-weight: 700;
+        color: var(--text-color, #1e293b);
         letter-spacing: -0.01em;
     }
     .section-subtitle {
-        font-size: 0.78rem; color: #64748b; font-weight: 500;
+        font-size: 0.78rem;
+        color: var(--text-color-secondary, #64748b);
+        font-weight: 500;
         margin-top: 0.1rem;
+        opacity: 0.85;
     }
 
     /* ===== CONTAINER CARDS ===== */
     div[data-testid="stVerticalBlockBorderWithFormatting"] {
-        background-color: #ffffff !important;
-        border: 1px solid #e2e8f0 !important;
+        background-color: var(--secondary-background-color, #ffffff) !important;
+        border: 1px solid rgba(128, 128, 128, 0.2) !important;
         box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 4px 12px -4px rgba(15, 23, 42, 0.06) !important;
         border-radius: 16px !important;
         padding: 1.5rem !important;
@@ -294,8 +298,8 @@ st.markdown("""
 
     /* ===== EMPTY STATE ===== */
     .empty-state {
-        background: #ffffff;
-        border: 2px dashed #cbd5e1;
+        background: var(--secondary-background-color, #ffffff);
+        border: 2px dashed rgba(128, 128, 128, 0.35);
         border-radius: 16px;
         padding: 3.5rem 2rem;
         text-align: center;
@@ -335,8 +339,8 @@ st.markdown("""
     /* ===== METRIC CARDS ===== */
     .metric-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.7rem; margin: 0.8rem 0; }
     .metric-card {
-        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-        border: 1px solid #e2e8f0;
+        background: var(--secondary-background-color, #ffffff);
+        border: 1px solid rgba(128, 128, 128, 0.2);
         border-radius: 12px;
         padding: 0.9rem;
         text-align: center;
@@ -356,6 +360,21 @@ st.markdown("""
 
     /* ===== RADIO & SELECT POLISH ===== */
     .stRadio > div { gap: 0.5rem; }
+
+    /* =============================================================
+       UNIVERSAL TEXT FIX — semua custom HTML pake Streamlit's theme variable
+       agar otomatis kontras di light ATAU dark mode
+       ============================================================= */
+    .section-title { color: var(--text-color) !important; }
+    .section-subtitle { color: var(--text-color) !important; opacity: 0.7; }
+    .empty-title { color: var(--text-color) !important; }
+    .empty-sub { color: var(--text-color) !important; opacity: 0.7; }
+    .step-label-txt { color: var(--text-color) !important; opacity: 0.7; }
+    .step-label-txt.active { color: #7c3aed !important; opacity: 1; }
+    .metric-lbl { color: var(--text-color) !important; opacity: 0.7; }
+    .metric-val { color: #7c3aed !important; }
+    .qc-title { color: #065f46 !important; }
+    .qc-sub { color: #047857 !important; }
 
     /* =============================================================
        DARK MODE ADAPTIVE — agar tetap rapi saat user pilih dark theme
