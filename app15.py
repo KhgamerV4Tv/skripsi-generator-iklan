@@ -875,7 +875,21 @@ for i, (num, label) in enumerate(steps_data, 1):
 stepper_html += '</div></div>'
 st.markdown(stepper_html, unsafe_allow_html=True)
 
-
+# ==============================================================================
+# [SEMENTARA] BANNER STATUS FIRESTORE UNTUK TESTING
+# ==============================================================================
+if db:
+    st.markdown("""
+    <div style='text-align: center; padding: 0.6rem; margin-bottom: 1.5rem; border-radius: 8px; background-color: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #10b981; font-weight: 600;'>
+        🟢 STATUS TESTING: Database Cloud (Firebase) Berhasil Terkoneksi!
+    </div>
+    """, unsafe_allow_html=True)
+else:
+    st.markdown("""
+    <div style='text-align: center; padding: 0.6rem; margin-bottom: 1.5rem; border-radius: 8px; background-color: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; color: #f59e0b; font-weight: 600;'>
+        🟡 STATUS TESTING: Mode Lokal Aktif (Firebase belum konek / secrets.toml belum terbaca)
+    </div>
+    """, unsafe_allow_html=True)
 # ==============================================================================
 # USER INTERFACE LAYOUT
 # ==============================================================================
