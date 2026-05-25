@@ -350,7 +350,7 @@ with col_f:
     with st.container(border=True):
         col_l1, col_l2 = st.columns([1.3, 1])
         with col_l1: logo_file = st.file_uploader("Upload Logo", type=['png', 'jpg'])
-        with col_l2: posisi_logo = st.selectbox("Posisi Logo", ["Kanan Atas", "Kiri Atas", "Kanan Bawah", "Kiri Bawah"])
+        with col_l2: posisi_logo = st.selectbox("Posisi Logo", ["Kanan Atas", "Kiri Atas", "Kanan Bawah", "Kiri Bawah", "Tengah Bawah"])
         market = st.multiselect("Target Market", ["Umum", "Mahasiswa", "Pekerja Kantoran", "Ibu Rumah Tangga", "Anak Sekolah / Remaja"], default=["Umum"])
 
     st.markdown('<div class="step-label">📝 Langkah 2: Data Produk & Manajemen Harga</div>', unsafe_allow_html=True)
