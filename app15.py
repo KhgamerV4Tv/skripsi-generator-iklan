@@ -34,11 +34,7 @@ st.markdown("""
         font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
     }
 
-    [data-testid="stAppViewContainer"] {
-        background: var(--background-color);
-    }
-
-    /* Sembunyikan footer Streamlit, biarkan menu titik 3 muncul untuk ganti theme */
+    /* Footer hidden, titik 3 tetap muncul */
     footer { visibility: hidden; }
     .block-container { padding-top: 1.5rem !important; padding-bottom: 3rem !important; }
 
@@ -100,414 +96,73 @@ st.markdown("""
     }
 
     /* ===== STEP PROGRESS STEPPER ===== */
-    .stepper-wrap {
-        background: var(--secondary-background-color, #ffffff);
-        border-radius: 16px;
-        padding: 1.1rem 1.3rem;
-        margin-bottom: 1.5rem;
-        box-shadow: 0 2px 8px -2px rgba(15, 23, 42, 0.08);
-        border: 1px solid rgba(128, 128, 128, 0.2);
-    }
-    .stepper {
-        display: flex; justify-content: space-between; align-items: center;
-        gap: 0.5rem; overflow-x: auto;
-    }
-    .step-item {
-        display: flex; flex-direction: column; align-items: center;
-        flex: 1; min-width: 80px; text-align: center;
-        position: relative;
-    }
-    .step-circle {
-        width: 36px; height: 36px;
-        border-radius: 50%;
-        display: flex; align-items: center; justify-content: center;
-        font-weight: 700; font-size: 0.9rem;
-        background: #f1f5f9; color: #94a3b8;
-        border: 2px solid #e2e8f0;
-        transition: all 0.3s;
-        z-index: 2;
-    }
-    .step-circle.active {
-        background: linear-gradient(135deg, #4f46e5, #7c3aed);
-        color: #fff; border-color: #4f46e5;
-        box-shadow: 0 4px 12px -2px rgba(79, 70, 229, 0.5);
-    }
-    .step-circle.done {
-        background: #10b981; color: #fff; border-color: #10b981;
-    }
-    .step-label-txt {
-        font-size: 0.7rem; color: #64748b;
-        margin-top: 0.4rem; font-weight: 600;
-        line-height: 1.2;
-    }
-    .step-label-txt.active { color: #4f46e5; }
-    .step-connector {
-        position: absolute; top: 18px; left: 50%; width: 100%;
-        height: 2px; background: #e2e8f0; z-index: 1;
-    }
+    .stepper-wrap { background: var(--secondary-background-color); border-radius: 16px; padding: 1.1rem 1.3rem; margin-bottom: 1.5rem; box-shadow: 0 2px 8px -2px rgba(15,23,42,0.08); border: 1px solid rgba(128,128,128,0.2); }
+    .stepper { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; overflow-x: auto; }
+    .step-item { display: flex; flex-direction: column; align-items: center; flex: 1; min-width: 70px; text-align: center; position: relative; }
+    .step-circle { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.9rem; background: rgba(128,128,128,0.15); color: inherit; opacity: 0.5; border: 2px solid rgba(128,128,128,0.3); transition: all 0.3s; z-index: 2; }
+    .step-circle.active { background: linear-gradient(135deg, #4f46e5, #7c3aed); color: #fff !important; opacity: 1; border-color: #4f46e5; box-shadow: 0 4px 12px -2px rgba(79,70,229,0.5); }
+    .step-circle.done { background: #10b981; color: #fff !important; opacity: 1; border-color: #10b981; }
+    .step-label-txt { font-size: 0.7rem; color: inherit; opacity: 0.6; margin-top: 0.4rem; font-weight: 600; line-height: 1.2; }
+    .step-label-txt.active { color: #7c3aed !important; opacity: 1; }
     .step-item:last-child .step-connector { display: none; }
 
     /* ===== SECTION HEADER ===== */
-    .section-card-header {
-        display: flex; align-items: center; gap: 0.7rem;
-        margin: 0 0 1rem 0;
-    }
-    .section-num {
-        width: 32px; height: 32px;
-        background: linear-gradient(135deg, #4f46e5, #7c3aed);
-        color: #fff;
-        border-radius: 10px;
-        display: flex; align-items: center; justify-content: center;
-        font-weight: 800; font-size: 0.95rem;
-        box-shadow: 0 4px 10px -2px rgba(79, 70, 229, 0.4);
-        flex-shrink: 0;
-    }
-    .section-title {
-        font-size: 1.05rem; font-weight: 700;
-        color: var(--text-color, #1e293b);
-        letter-spacing: -0.01em;
-    }
-    .section-subtitle {
-        font-size: 0.78rem;
-        color: var(--text-color-secondary, #64748b);
-        font-weight: 500;
-        margin-top: 0.1rem;
-        opacity: 0.85;
-    }
+    .section-card-header { display: flex; align-items: center; gap: 0.7rem; margin: 0 0 1rem 0; }
+    .section-num { width: 32px; height: 32px; background: linear-gradient(135deg, #4f46e5, #7c3aed); color: #fff !important; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.95rem; box-shadow: 0 4px 10px -2px rgba(79,70,229,0.4); flex-shrink: 0; }
+    .section-title { font-size: 1.05rem; font-weight: 700; color: inherit; letter-spacing: -0.01em; }
+    .section-subtitle { font-size: 0.78rem; color: inherit; opacity: 0.65; font-weight: 500; margin-top: 0.1rem; }
 
     /* ===== CONTAINER CARDS ===== */
-    div[data-testid="stVerticalBlockBorderWithFormatting"] {
-        background-color: var(--secondary-background-color, #ffffff) !important;
-        border: 1px solid rgba(128, 128, 128, 0.2) !important;
-        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 4px 12px -4px rgba(15, 23, 42, 0.06) !important;
-        border-radius: 16px !important;
-        padding: 1.5rem !important;
-        transition: box-shadow 0.25s ease;
-    }
-    div[data-testid="stVerticalBlockBorderWithFormatting"]:hover {
-        box-shadow: 0 4px 6px rgba(15, 23, 42, 0.05), 0 12px 25px -5px rgba(15, 23, 42, 0.1) !important;
-    }
+    div[data-testid="stVerticalBlockBorderWithFormatting"] { background-color: var(--secondary-background-color) !important; border: 1px solid rgba(128,128,128,0.2) !important; box-shadow: 0 1px 3px rgba(15,23,42,0.04), 0 4px 12px -4px rgba(15,23,42,0.06) !important; border-radius: 16px !important; padding: 1.5rem !important; transition: box-shadow 0.25s ease; }
+    div[data-testid="stVerticalBlockBorderWithFormatting"]:hover { box-shadow: 0 4px 6px rgba(15,23,42,0.05), 0 12px 25px -5px rgba(15,23,42,0.1) !important; }
 
     /* ===== INFO BOXES ===== */
-    .kbli-desc, .elemen-box, .photo-caption-box {
-        border-radius: 10px;
-        padding: 0.85rem 1.1rem;
-        font-size: 0.85rem;
-        margin-top: 0.7rem;
-        color: #1e293b !important;
-        line-height: 1.55;
-        font-weight: 500;
-    }
-    .kbli-desc {
-        background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-        border-left: 4px solid #3b82f6;
-    }
-    .elemen-box {
-        background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-        border-left: 4px solid #22c55e;
-    }
-    .photo-caption-box {
-        background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
-        border-left: 4px solid #f97316;
-        margin-bottom: 0.9rem;
-    }
+    .kbli-desc { border-radius: 10px; padding: 0.85rem 1.1rem; font-size: 0.85rem; margin-top: 0.7rem; line-height: 1.55; font-weight: 500; background: rgba(59,130,246,0.12); border-left: 4px solid #3b82f6; color: inherit; }
+    .elemen-box { border-radius: 10px; padding: 0.85rem 1.1rem; font-size: 0.85rem; margin-top: 0.7rem; line-height: 1.55; font-weight: 500; background: rgba(34,197,94,0.12); border-left: 4px solid #22c55e; color: inherit; }
+    .photo-caption-box { border-radius: 10px; padding: 0.85rem 1.1rem; font-size: 0.85rem; margin-top: 0.7rem; margin-bottom: 0.9rem; line-height: 1.55; font-weight: 500; background: rgba(249,115,22,0.12); border-left: 4px solid #f97316; color: inherit; }
 
     /* ===== KEYWORD TAGS ===== */
-    .kw-tag {
-        background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
-        border-radius: 999px;
-        padding: 7px 14px;
-        font-size: 0.78rem;
-        color: #0c4a6e;
-        margin: 4px 5px 8px 0;
-        display: inline-block;
-        font-weight: 600;
-        border: 1px solid #7dd3fc;
-        box-shadow: 0 1px 3px rgba(14, 165, 233, 0.15);
-    }
-
-    /* ===== STATUS BADGE ===== */
-    .status-badge {
-        display: inline-flex; align-items: center; gap: 0.5rem;
-        background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
-        border: 1px solid #d8b4fe;
-        border-radius: 10px;
-        padding: 0.6rem 1rem;
-        font-size: 0.82rem;
-        color: #6b21a8;
-        font-weight: 600;
-        margin-bottom: 1.2rem;
-        width: 100%;
-        justify-content: center;
-    }
-    .status-badge.connected {
-        background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-        border-color: #86efac;
-        color: #166534;
-    }
+    .kw-tag { background: rgba(14,165,233,0.15); border-radius: 999px; padding: 7px 14px; font-size: 0.78rem; color: inherit; margin: 4px 5px 8px 0; display: inline-block; font-weight: 600; border: 1px solid rgba(14,165,233,0.35); }
 
     /* ===== BUTTONS ===== */
-    .stButton > button {
-        border-radius: 12px !important;
-        font-weight: 600 !important;
-        transition: all 0.2s !important;
-        letter-spacing: -0.01em;
-    }
-    .stButton > button[kind="primary"] {
-        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%) !important;
-        border: none !important;
-        box-shadow: 0 4px 14px -2px rgba(79, 70, 229, 0.45) !important;
-        padding: 0.7rem 1.2rem !important;
-    }
-    .stButton > button[kind="primary"]:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 8px 20px -2px rgba(79, 70, 229, 0.6) !important;
-    }
+    .stButton > button { border-radius: 12px !important; font-weight: 600 !important; transition: all 0.2s !important; letter-spacing: -0.01em; }
+    .stButton > button[kind="primary"] { background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%) !important; border: none !important; box-shadow: 0 4px 14px -2px rgba(79,70,229,0.45) !important; padding: 0.7rem 1.2rem !important; }
+    .stButton > button[kind="primary"]:hover { transform: translateY(-1px); box-shadow: 0 8px 20px -2px rgba(79,70,229,0.6) !important; }
 
     /* ===== INPUTS ===== */
-    .stTextInput input, .stTextArea textarea, .stNumberInput input, .stSelectbox > div > div {
-        border-radius: 10px !important;
-        border-color: #e2e8f0 !important;
-        font-family: 'Plus Jakarta Sans', sans-serif !important;
-    }
-    .stTextInput input:focus, .stTextArea textarea:focus, .stNumberInput input:focus {
-        border-color: #4f46e5 !important;
-        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1) !important;
-    }
+    .stTextInput input, .stTextArea textarea, .stNumberInput input, .stSelectbox > div > div { border-radius: 10px !important; font-family: 'Plus Jakarta Sans', sans-serif !important; }
+    .stTextInput input:focus, .stTextArea textarea:focus, .stNumberInput input:focus { border-color: #4f46e5 !important; box-shadow: 0 0 0 3px rgba(79,70,229,0.1) !important; }
 
     /* ===== QC SUCCESS CARD ===== */
-    .qc-card {
-        background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
-        border: 1px solid #6ee7b7;
-        border-radius: 12px;
-        padding: 1rem 1.2rem;
-        margin-top: 0.8rem;
-        display: flex; align-items: center; gap: 0.8rem;
-    }
-    .qc-icon {
-        width: 40px; height: 40px;
-        background: linear-gradient(135deg, #10b981, #059669);
-        border-radius: 10px;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 1.3rem;
-        flex-shrink: 0;
-        box-shadow: 0 4px 10px -2px rgba(16, 185, 129, 0.4);
-    }
-    .qc-title { font-weight: 700; color: #065f46; font-size: 0.95rem; }
-    .qc-sub { font-size: 0.78rem; color: #047857; margin-top: 0.15rem; }
+    .qc-card { background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.4); border-radius: 12px; padding: 1rem 1.2rem; margin-top: 0.8rem; display: flex; align-items: center; gap: 0.8rem; }
+    .qc-icon { width: 40px; height: 40px; background: linear-gradient(135deg, #10b981, #059669); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; box-shadow: 0 4px 10px -2px rgba(16,185,129,0.4); }
+    .qc-title { font-weight: 700; color: inherit; font-size: 0.95rem; }
+    .qc-sub { font-size: 0.78rem; color: inherit; opacity: 0.75; margin-top: 0.15rem; }
 
     /* ===== EMPTY STATE ===== */
-    .empty-state {
-        background: var(--secondary-background-color, #ffffff);
-        border: 2px dashed rgba(128, 128, 128, 0.35);
-        border-radius: 16px;
-        padding: 3.5rem 2rem;
-        text-align: center;
-    }
-    .empty-icon { font-size: 3.5rem; margin-bottom: 0.6rem; opacity: 0.5; }
-    .empty-title { font-size: 1.1rem; font-weight: 700; color: #475569; margin-bottom: 0.4rem; }
-    .empty-sub { font-size: 0.88rem; color: #94a3b8; }
+    .empty-state { background: var(--secondary-background-color); border: 2px dashed rgba(128,128,128,0.35); border-radius: 16px; padding: 3.5rem 2rem; text-align: center; }
+    .empty-icon { font-size: 3.5rem; margin-bottom: 0.6rem; opacity: 0.4; }
+    .empty-title { font-size: 1.1rem; font-weight: 700; color: inherit; margin-bottom: 0.4rem; }
+    .empty-sub { font-size: 0.88rem; color: inherit; opacity: 0.6; }
 
     /* ===== SIDEBAR ===== */
-    [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #1e1b4b 0%, #312e81 100%);
-    }
+    [data-testid="stSidebar"] { background: linear-gradient(180deg, #1e1b4b 0%, #312e81 100%) !important; }
     [data-testid="stSidebar"] * { color: #e0e7ff !important; }
-    [data-testid="stSidebar"] .sidebar-title {
-        font-size: 1.1rem; font-weight: 800;
-        color: #fff !important; margin-bottom: 0.3rem;
-    }
-    [data-testid="stSidebar"] .sidebar-sub {
-        font-size: 0.78rem; color: #a5b4fc !important; margin-bottom: 1.2rem;
-    }
-    [data-testid="stSidebar"] .sidebar-section {
-        background: rgba(255, 255, 255, 0.06);
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        border-radius: 12px;
-        padding: 0.85rem 1rem;
-        margin-bottom: 0.8rem;
-    }
-    [data-testid="stSidebar"] .sb-label {
-        font-size: 0.72rem; color: #a5b4fc !important;
-        text-transform: uppercase; letter-spacing: 0.08em;
-        font-weight: 700; margin-bottom: 0.3rem;
-    }
-    [data-testid="stSidebar"] .sb-value {
-        font-size: 0.92rem; color: #fff !important; font-weight: 600;
-    }
+    [data-testid="stSidebar"] .sidebar-title { font-size: 1.1rem; font-weight: 800; color: #fff !important; margin-bottom: 0.3rem; }
+    [data-testid="stSidebar"] .sidebar-sub { font-size: 0.78rem; color: #a5b4fc !important; margin-bottom: 1.2rem; }
+    [data-testid="stSidebar"] .sidebar-section { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 0.85rem 1rem; margin-bottom: 0.8rem; }
+    [data-testid="stSidebar"] .sb-label { font-size: 0.72rem; color: #a5b4fc !important; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; margin-bottom: 0.3rem; }
+    [data-testid="stSidebar"] .sb-value { font-size: 0.92rem; color: #fff !important; font-weight: 600; }
 
     /* ===== METRIC CARDS ===== */
     .metric-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.7rem; margin: 0.8rem 0; }
-    .metric-card {
-        background: var(--secondary-background-color, #ffffff);
-        border: 1px solid rgba(128, 128, 128, 0.2);
-        border-radius: 12px;
-        padding: 0.9rem;
-        text-align: center;
-    }
-    .metric-val { font-size: 1.4rem; font-weight: 800; color: #4f46e5; }
-    .metric-lbl { font-size: 0.72rem; color: #64748b; font-weight: 600; margin-top: 0.2rem; }
+    .metric-card { background: var(--secondary-background-color); border: 1px solid rgba(128,128,128,0.2); border-radius: 12px; padding: 0.9rem; text-align: center; }
+    .metric-val { font-size: 1.4rem; font-weight: 800; color: #7c3aed; }
+    .metric-lbl { font-size: 0.72rem; color: inherit; opacity: 0.65; font-weight: 600; margin-top: 0.2rem; }
 
-    /* ===== DIVIDERS ===== */
-    hr { margin: 1.2rem 0 !important; border-color: #e2e8f0 !important; }
-
-    /* ===== CHAT MESSAGES ===== */
-    [data-testid="stChatMessage"] {
-        border-radius: 12px !important;
-        padding: 0.9rem 1rem !important;
-        margin-bottom: 0.6rem !important;
-    }
-
-    /* ===== RADIO & SELECT POLISH ===== */
+    /* ===== MISC ===== */
     .stRadio > div { gap: 0.5rem; }
-
-    /* =============================================================
-       UNIVERSAL TEXT FIX — semua custom HTML pake Streamlit's theme variable
-       agar otomatis kontras di light ATAU dark mode
-       ============================================================= */
-    .section-title { color: var(--text-color) !important; }
-    .section-subtitle { color: var(--text-color) !important; opacity: 0.7; }
-    .empty-title { color: var(--text-color) !important; }
-    .empty-sub { color: var(--text-color) !important; opacity: 0.7; }
-    .step-label-txt { color: var(--text-color) !important; opacity: 0.7; }
-    .step-label-txt.active { color: #7c3aed !important; opacity: 1; }
-    .metric-lbl { color: var(--text-color) !important; opacity: 0.7; }
-    .metric-val { color: #7c3aed !important; }
-    .qc-title { color: #065f46 !important; }
-    .qc-sub { color: #047857 !important; }
-
-    /* =============================================================
-       DARK MODE ADAPTIVE — agar tetap rapi saat user pilih dark theme
-       ============================================================= */
-    @media (prefers-color-scheme: dark) {
-        [data-testid="stAppViewContainer"] {
-            background: linear-gradient(180deg, #0f172a 0%, #1e1b4b 100%);
-        }
-
-        /* Container cards jadi dark slate */
-        div[data-testid="stVerticalBlockBorderWithFormatting"] {
-            background-color: #1e293b !important;
-            border: 1px solid #334155 !important;
-            box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.4) !important;
-        }
-
-        /* Info boxes — adjust untuk dark */
-        .kbli-desc {
-            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%) !important;
-            color: #dbeafe !important;
-        }
-        .kbli-desc * { color: #dbeafe !important; }
-
-        .elemen-box {
-            background: linear-gradient(135deg, #14532d 0%, #166534 100%) !important;
-            color: #dcfce7 !important;
-        }
-        .elemen-box * { color: #dcfce7 !important; }
-
-        .photo-caption-box {
-            background: linear-gradient(135deg, #7c2d12 0%, #9a3412 100%) !important;
-            color: #fed7aa !important;
-        }
-        .photo-caption-box * { color: #fed7aa !important; }
-
-        /* Keyword tags */
-        .kw-tag {
-            background: linear-gradient(135deg, #0c4a6e 0%, #075985 100%) !important;
-            color: #bae6fd !important;
-            border-color: #0369a1 !important;
-        }
-
-        /* Section title & subtitle */
-        .section-title { color: #f1f5f9 !important; }
-        .section-subtitle { color: #94a3b8 !important; }
-
-        /* Stepper card */
-        .stepper-wrap {
-            background: #1e293b !important;
-            border-color: #334155 !important;
-        }
-        .step-circle {
-            background: #334155 !important;
-            color: #94a3b8 !important;
-            border-color: #475569 !important;
-        }
-        .step-label-txt { color: #94a3b8 !important; }
-        .step-label-txt.active { color: #a78bfa !important; }
-        .step-connector { background: #334155 !important; }
-
-        /* QC Card */
-        .qc-card {
-            background: linear-gradient(135deg, #064e3b 0%, #065f46 100%) !important;
-            border-color: #10b981 !important;
-        }
-        .qc-title { color: #d1fae5 !important; }
-        .qc-sub { color: #6ee7b7 !important; }
-
-        /* Empty state */
-        .empty-state {
-            background: #1e293b !important;
-            border-color: #475569 !important;
-        }
-        .empty-title { color: #cbd5e1 !important; }
-        .empty-sub { color: #94a3b8 !important; }
-
-        /* Metric cards */
-        .metric-card {
-            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
-            border-color: #334155 !important;
-        }
-        .metric-val { color: #a78bfa !important; }
-        .metric-lbl { color: #94a3b8 !important; }
-
-        /* Status badge */
-        .status-badge {
-            background: linear-gradient(135deg, #3b0764 0%, #581c87 100%) !important;
-            border-color: #a78bfa !important;
-            color: #e9d5ff !important;
-        }
-        .status-badge.connected {
-            background: linear-gradient(135deg, #064e3b 0%, #065f46 100%) !important;
-            border-color: #10b981 !important;
-            color: #d1fae5 !important;
-        }
-
-        /* Inputs di dark mode */
-        .stTextInput input, .stTextArea textarea, .stNumberInput input {
-            background-color: #0f172a !important;
-            color: #f1f5f9 !important;
-            border-color: #334155 !important;
-        }
-
-        hr { border-color: #334155 !important; }
-    }
-
-    /* Streamlit's official dark theme class support */
-    .stApp[data-theme="dark"] [data-testid="stAppViewContainer"] {
-        background: linear-gradient(180deg, #0f172a 0%, #1e1b4b 100%);
-    }
-    .stApp[data-theme="dark"] div[data-testid="stVerticalBlockBorderWithFormatting"] {
-        background-color: #1e293b !important;
-        border-color: #334155 !important;
-    }
-    .stApp[data-theme="dark"] .section-title { color: #f1f5f9 !important; }
-    .stApp[data-theme="dark"] .section-subtitle { color: #94a3b8 !important; }
-    .stApp[data-theme="dark"] .stepper-wrap {
-        background: #1e293b !important; border-color: #334155 !important;
-    }
-    .stApp[data-theme="dark"] .step-circle {
-        background: #334155 !important; color: #94a3b8 !important; border-color: #475569 !important;
-    }
-    .stApp[data-theme="dark"] .step-label-txt { color: #94a3b8 !important; }
-    .stApp[data-theme="dark"] .empty-state {
-        background: #1e293b !important; border-color: #475569 !important;
-    }
-    .stApp[data-theme="dark"] .empty-title { color: #cbd5e1 !important; }
-    .stApp[data-theme="dark"] .empty-sub { color: #94a3b8 !important; }
-    .stApp[data-theme="dark"] .kbli-desc,
-    .stApp[data-theme="dark"] .kbli-desc * { color: #dbeafe !important; }
-    .stApp[data-theme="dark"] .kbli-desc {
-        background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%) !important;
-    }
+    [data-testid="stChatMessage"] { border-radius: 12px !important; padding: 0.9rem 1rem !important; margin-bottom: 0.6rem !important; }
 
 </style>
 """, unsafe_allow_html=True)
@@ -879,15 +534,7 @@ col_f, col_r = st.columns([1, 1.35], gap="large")
 # ============================================================
 with col_f:
     # --- LANGKAH 1: BRANDING ---
-    st.markdown("""
-    <div class="section-card-header">
-        <div class="section-num">1</div>
-        <div>
-            <div class="section-title">Identitas & Branding UMKM</div>
-            <div class="section-subtitle">Logo, posisi watermark, dan target market</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown('<div class="section-card-header"><div class="section-num">1</div><div><div class="section-title">Identitas &amp; Branding UMKM</div><div class="section-subtitle">Logo, posisi watermark, dan target market</div></div></div>', unsafe_allow_html=True)
 
     with st.container(border=True):
         col_l1, col_l2 = st.columns([1.3, 1])
@@ -902,15 +549,7 @@ with col_f:
         )
 
     # --- LANGKAH 2: PRODUK ---
-    st.markdown("""
-    <div class="section-card-header">
-        <div class="section-num">2</div>
-        <div>
-            <div class="section-title">Data Produk & Manajemen Harga</div>
-            <div class="section-subtitle">Brand, USP, kategori KBLI, dan penawaran</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown('<div class="section-card-header"><div class="section-num">2</div><div><div class="section-title">Data Produk &amp; Manajemen Harga</div><div class="section-subtitle">Brand, USP, kategori KBLI, dan penawaran</div></div></div>', unsafe_allow_html=True)
 
     with st.container(border=True):
         brand_name = st.text_input("🏪 Nama Brand / Usaha UMKM", placeholder="Contoh: Bakso Mantap Jaya")
@@ -972,15 +611,7 @@ with col_f:
                 with c2: foto_desc.append(st.text_input(f"Keterangan Foto {i+1}", key=f"f_{i}", placeholder=f"Contoh: Bakso sapi premium", label_visibility="collapsed"))
 
     # --- LANGKAH 3: PLATFORM ---
-    st.markdown("""
-    <div class="section-card-header">
-        <div class="section-num">3</div>
-        <div>
-            <div class="section-title">Strategi Platform & Visual</div>
-            <div class="section-subtitle">Platform target, tone, mood, dan komposisi visual</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown('<div class="section-card-header"><div class="section-num">3</div><div><div class="section-title">Strategi Platform &amp; Visual</div><div class="section-subtitle">Platform target, tone, mood, dan komposisi visual</div></div></div>', unsafe_allow_html=True)
 
     with st.container(border=True):
         platform = st.radio("📱 Platform Target", ["Instagram", "WhatsApp", "TikTok"], horizontal=True)
@@ -1020,15 +651,7 @@ with col_f:
 # ============================================================
 with col_r:
     # --- LANGKAH 4: COPYWRITING ---
-    st.markdown("""
-    <div class="section-card-header">
-        <div class="section-num">4</div>
-        <div>
-            <div class="section-title">Copywriting Hasil AI</div>
-            <div class="section-subtitle">Naskah iklan otomatis siap publikasi</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown('<div class="section-card-header"><div class="section-num">4</div><div><div class="section-title">Copywriting Hasil AI</div><div class="section-subtitle">Naskah iklan otomatis siap publikasi</div></div></div>', unsafe_allow_html=True)
 
     if st.session_state.main_txt:
         with st.container(border=True):
@@ -1062,15 +685,7 @@ with col_r:
         st.markdown("<br>", unsafe_allow_html=True)
 
         # --- LANGKAH 5: VISUAL ---
-        st.markdown("""
-        <div class="section-card-header">
-            <div class="section-num">5</div>
-            <div>
-                <div class="section-title">Render Visual Final</div>
-                <div class="section-subtitle">Fotografi komersial otomatis dengan AI</div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown('<div class="section-card-header"><div class="section-num">5</div><div><div class="section-title">Render Visual Final</div><div class="section-subtitle">Fotografi komersial otomatis dengan AI</div></div></div>', unsafe_allow_html=True)
 
         with st.container(border=True):
             with st.expander("⚙️ Lihat/Edit Instruksi Visual AI (Opsional)"):
@@ -1103,15 +718,7 @@ with col_r:
         st.markdown("<br>", unsafe_allow_html=True)
 
         # --- LANGKAH 6: REVISI ---
-        st.markdown("""
-        <div class="section-card-header">
-            <div class="section-num">6</div>
-            <div>
-                <div class="section-title">Asisten Revisi AI</div>
-                <div class="section-subtitle">Chatbot untuk perbaikan otomatis naskah & visual</div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown('<div class="section-card-header"><div class="section-num">6</div><div><div class="section-title">Asisten Revisi AI</div><div class="section-subtitle">Chatbot untuk perbaikan otomatis naskah &amp; visual</div></div></div>', unsafe_allow_html=True)
 
         with st.container(border=True):
             st.caption("💬 Kurang pas? Ketik perintah revisi — misal: *'Tambahkan nomor WA 08123'* atau *'Buat tone lebih formal'*")
