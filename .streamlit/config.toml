@@ -1,2 +1,18 @@
 [server]
 pythonVersion = "3.11"
+
+[theme]
+# Force light theme sebagai default — match desain skripsi
+base = "light"
+primaryColor = "#4f46e5"
+backgroundColor = "#f8fafc"
+secondaryBackgroundColor = "#ffffff"
+textColor = "#1e293b"
+font = "sans serif"
+
+[client]
+# Tampilkan toolbar (titik 3) supaya user bisa ganti theme
+toolbarMode = "auto"
+
+[browser]
+gatherUsageStats = false

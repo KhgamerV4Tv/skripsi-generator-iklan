@@ -38,8 +38,8 @@ st.markdown("""
         background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
     }
 
-    /* Sembunyikan default Streamlit chrome */
-    #MainMenu, footer, header[data-testid="stHeader"] { visibility: hidden; }
+    /* Sembunyikan footer Streamlit, biarkan menu titik 3 muncul untuk ganti theme */
+    footer { visibility: hidden; }
     .block-container { padding-top: 1.5rem !important; padding-bottom: 3rem !important; }
 
     /* ===== HERO HEADER ===== */
@@ -356,6 +356,139 @@ st.markdown("""
 
     /* ===== RADIO & SELECT POLISH ===== */
     .stRadio > div { gap: 0.5rem; }
+
+    /* =============================================================
+       DARK MODE ADAPTIVE — agar tetap rapi saat user pilih dark theme
+       ============================================================= */
+    @media (prefers-color-scheme: dark) {
+        [data-testid="stAppViewContainer"] {
+            background: linear-gradient(180deg, #0f172a 0%, #1e1b4b 100%);
+        }
+
+        /* Container cards jadi dark slate */
+        div[data-testid="stVerticalBlockBorderWithFormatting"] {
+            background-color: #1e293b !important;
+            border: 1px solid #334155 !important;
+            box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.4) !important;
+        }
+
+        /* Info boxes — adjust untuk dark */
+        .kbli-desc {
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%) !important;
+            color: #dbeafe !important;
+        }
+        .kbli-desc * { color: #dbeafe !important; }
+
+        .elemen-box {
+            background: linear-gradient(135deg, #14532d 0%, #166534 100%) !important;
+            color: #dcfce7 !important;
+        }
+        .elemen-box * { color: #dcfce7 !important; }
+
+        .photo-caption-box {
+            background: linear-gradient(135deg, #7c2d12 0%, #9a3412 100%) !important;
+            color: #fed7aa !important;
+        }
+        .photo-caption-box * { color: #fed7aa !important; }
+
+        /* Keyword tags */
+        .kw-tag {
+            background: linear-gradient(135deg, #0c4a6e 0%, #075985 100%) !important;
+            color: #bae6fd !important;
+            border-color: #0369a1 !important;
+        }
+
+        /* Section title & subtitle */
+        .section-title { color: #f1f5f9 !important; }
+        .section-subtitle { color: #94a3b8 !important; }
+
+        /* Stepper card */
+        .stepper-wrap {
+            background: #1e293b !important;
+            border-color: #334155 !important;
+        }
+        .step-circle {
+            background: #334155 !important;
+            color: #94a3b8 !important;
+            border-color: #475569 !important;
+        }
+        .step-label-txt { color: #94a3b8 !important; }
+        .step-label-txt.active { color: #a78bfa !important; }
+        .step-connector { background: #334155 !important; }
+
+        /* QC Card */
+        .qc-card {
+            background: linear-gradient(135deg, #064e3b 0%, #065f46 100%) !important;
+            border-color: #10b981 !important;
+        }
+        .qc-title { color: #d1fae5 !important; }
+        .qc-sub { color: #6ee7b7 !important; }
+
+        /* Empty state */
+        .empty-state {
+            background: #1e293b !important;
+            border-color: #475569 !important;
+        }
+        .empty-title { color: #cbd5e1 !important; }
+        .empty-sub { color: #94a3b8 !important; }
+
+        /* Metric cards */
+        .metric-card {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
+            border-color: #334155 !important;
+        }
+        .metric-val { color: #a78bfa !important; }
+        .metric-lbl { color: #94a3b8 !important; }
+
+        /* Status badge */
+        .status-badge {
+            background: linear-gradient(135deg, #3b0764 0%, #581c87 100%) !important;
+            border-color: #a78bfa !important;
+            color: #e9d5ff !important;
+        }
+        .status-badge.connected {
+            background: linear-gradient(135deg, #064e3b 0%, #065f46 100%) !important;
+            border-color: #10b981 !important;
+            color: #d1fae5 !important;
+        }
+
+        /* Inputs di dark mode */
+        .stTextInput input, .stTextArea textarea, .stNumberInput input {
+            background-color: #0f172a !important;
+            color: #f1f5f9 !important;
+            border-color: #334155 !important;
+        }
+
+        hr { border-color: #334155 !important; }
+    }
+
+    /* Streamlit's official dark theme class support */
+    .stApp[data-theme="dark"] [data-testid="stAppViewContainer"] {
+        background: linear-gradient(180deg, #0f172a 0%, #1e1b4b 100%);
+    }
+    .stApp[data-theme="dark"] div[data-testid="stVerticalBlockBorderWithFormatting"] {
+        background-color: #1e293b !important;
+        border-color: #334155 !important;
+    }
+    .stApp[data-theme="dark"] .section-title { color: #f1f5f9 !important; }
+    .stApp[data-theme="dark"] .section-subtitle { color: #94a3b8 !important; }
+    .stApp[data-theme="dark"] .stepper-wrap {
+        background: #1e293b !important; border-color: #334155 !important;
+    }
+    .stApp[data-theme="dark"] .step-circle {
+        background: #334155 !important; color: #94a3b8 !important; border-color: #475569 !important;
+    }
+    .stApp[data-theme="dark"] .step-label-txt { color: #94a3b8 !important; }
+    .stApp[data-theme="dark"] .empty-state {
+        background: #1e293b !important; border-color: #475569 !important;
+    }
+    .stApp[data-theme="dark"] .empty-title { color: #cbd5e1 !important; }
+    .stApp[data-theme="dark"] .empty-sub { color: #94a3b8 !important; }
+    .stApp[data-theme="dark"] .kbli-desc,
+    .stApp[data-theme="dark"] .kbli-desc * { color: #dbeafe !important; }
+    .stApp[data-theme="dark"] .kbli-desc {
+        background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%) !important;
+    }
 
 </style>
 """, unsafe_allow_html=True)
