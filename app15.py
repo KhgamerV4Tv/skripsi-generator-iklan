@@ -583,6 +583,37 @@ st.markdown("""
     .stApp[data-theme="dark"] [data-testid="stMarkdownContainer"] h6 {
         color: #f8fafc !important; /* Paksa jadi putih terang */
     }
+            /* =============================================================
+       PERBAIKAN WARNA STEPPER PROGRESS BAR (DARK MODE)
+       ============================================================= */
+    
+    /* 1. Step yang BELUM dilewati (Upcoming) */
+    .step-circle {
+        background: #334155 !important;
+        color: #94a3b8 !important;
+        border-color: #475569 !important;
+    }
+
+    /* 2. Step yang SEDANG aktif (Active - Ungu Menyala) */
+    .step-circle.active {
+        background: linear-gradient(135deg, #4f46e5, #7c3aed) !important;
+        color: #ffffff !important; 
+        border-color: #6d28d9 !important;
+        box-shadow: 0 0 15px rgba(124, 58, 237, 0.4) !important; /* Efek glow */
+    }
+
+    /* 3. Step yang SUDAH selesai (Done - Hijau) */
+    .step-circle.done {
+        background: linear-gradient(135deg, #10b981, #059669) !important;
+        color: #ffffff !important; 
+        border-color: #047857 !important;
+        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2) !important;
+    }
+
+    /* 4. Garis penghubung antar step */
+    .step-connector { 
+        background: #334155 !important; 
+    }
 </style>
 """, unsafe_allow_html=True)
 
