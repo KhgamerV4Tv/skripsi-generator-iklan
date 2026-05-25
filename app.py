@@ -554,7 +554,7 @@ st.markdown("""
     </div>
     <div class="hero-disclaimer">
         <span>🔒</span> 
-        <span><b>Aman & Privat:</b> Data dan foto yang diunggah hanya diproses secara <i>real-time</i> oleh sistem dan tidak disimpan oleh sistem .</span>
+        <span><b>Aman & Privat:</b> Data dan foto yang diunggah hanya diproses secara <i>real-time</i> oleh sistem dan tidak disimpan oleh sistem.</span>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -776,18 +776,27 @@ Pastikan output akhir TETAP mengikuti format baku (ada Headline, Caption, Hashta
         def __init__(self, content): self.content = content
     return llm_generator.invoke([DummyMsg(prompt)]).content
 
+# UPDATE: Evaluasi Kualitatif LLM-as-a-Judge
 @st.cache_data(show_spinner=False)
 def evaluate_ad_quality_master(kategori, text_result):
-    prompt = f"""Kamu adalah Dosen Pakar Marketing Digital & AI.
-Tugasmu adalah menjadi 'LLM-as-a-Judge' untuk mengevaluasi naskah iklan UMKM berikut.
+    prompt = f"""Kamu adalah Dosen Pakar Marketing Digital dan Auditor AI.
+Tugasmu adalah melakukan Quality Control (LLM-as-a-Judge) pada naskah iklan UMKM berikut:
 
-Kategori Usaha: {kategori}
+Kategori Usaha (KBLI): {kategori}
 Naskah Iklan:
 {text_result}
 
-Berikan penilaian analitis dan ketat. Tampilkan output HANYA dalam format ini:
-SKOR KELAYAKAN: [Berikan angka 1-100]
-ANALISIS PAKAR: [Berikan 2-3 kalimat penjelasan mengapa skor tersebut diberikan, sebutkan kelebihan dan kekurangannya berdasarkan target pasar]
+---
+ATURAN PREDIKAT MUTLAK:
+Tentukan status kelayakan naskah iklan hanya ke dalam salah satu dari 4 kategori ini:
+1. "Sangat Bagus" -> Jika iklan benar-benar kreatif, emosional, struktur copywriting sempurna, dan sangat persuasif.
+2. "Sudah Memenuhi Standar" -> Jika seluruh elemen wajib (USP, CTA, Harga) lengkap, tata bahasa rapi, namun gaya penyampaiannya cenderung standar/aman.
+3. "Perlu Perbaikan" -> Jika ada elemen penting yang terlewat, tone kurang pas dengan target market, atau terlalu kaku.
+4. "Kurang Layak" -> Jika format berantakan, tidak mencerminkan KBLI terkait, atau tidak menjual sama sekali.
+
+Tampilkan output HANYA dalam format terstruktur ini (tanpa markdown tambahan):
+STATUS KELAYAKAN: [Tulis salah satu predikat di atas]
+ANALISIS PAKAR: [Berikan 2 kalimat ulasan kritis yang objektif mengenai kelebihan utama dan celah yang masih bisa ditingkatkan]
 """
     class DummyMsg:
         def __init__(self, content): self.content = content
@@ -1154,8 +1163,8 @@ with col_r:
         st.caption("Silakan isi evaluasi kelayakan hasil *generate* AI di bawah ini untuk keperluan pengujian sistem.")
         
         with st.form("gform_mokap", clear_on_submit=True):
-            f_bidang = st.selectbox("Bidang Hasil Pengujian", ["Bidang Food & Beverages", "Bidang Fashion", "Bidang Jasa","Bidang lainnya"])
-            f_tester = st.text_input("Nama Penilai", value="", placeholder="Contoh: Nama Usaha ")
+            f_bidang = st.selectbox("Bidang Hasil Pengujian", ["Bidang Food & Beverages", "Bidang Fashion", "Bidang Jasa", "Bidang lainnya"])
+            f_tester = st.text_input("Nama Penilai", value="", placeholder="Contoh: Nama Usaha")
             f_catatan = st.text_area("Catatan Evaluasi", placeholder="Tuliskan catatan evaluasi terhadap hasil iklan...")
             f_skor = st.slider("Skor Kelayakan Hasil (1 - 100)", 1, 100, 85)
 
@@ -1209,6 +1218,42 @@ with col_r:
                 with col_s2:
                     st.markdown(f"**Total Trafik Sistem:**<br>⚡ {len(final_usage_list)} Interaksi AI", unsafe_allow_html=True)
                 st.markdown("<hr>", unsafe_allow_html=True)
+
+                # UPDATE: Konversi predikat teks LLM ke skor angka untuk admin dashboard
+                n_total = len(final_log_list)
+                avg_score = 0
+                if final_log_list:
+                    # Konversi otomatis teks predikat ke angka untuk statistik internal admin
+                    score_map = {"Sangat Bagus": 95, "Sudah Memenuhi Standar": 83, "Perlu Perbaikan": 70, "Kurang Layak": 50}
+                    scores = []
+                    for d in final_log_list:
+                        skor_raw = d.get("Skor Kelayakan", 0)
+                        if isinstance(skor_raw, (int, float)):
+                            scores.append(skor_raw)
+                        else:
+                            # Jika data berupa teks status dari LLM-as-a-Judge, bersihkan spasi
+                            bersih = str(skor_raw).replace("STATUS KELAYAKAN:", "").strip()
+                            scores.append(score_map.get(bersih, 80))
+                    
+                    avg_score = round(sum(scores) / len(scores), 1) if scores else 0
+                n_bidang = len(set([d.get("Bidang", "") for d in final_log_list]))
+
+                st.markdown(f"""
+                <div class="metric-grid">
+                    <div class="metric-card">
+                        <div class="metric-val">{n_total}</div>
+                        <div class="metric-lbl">Total Pengujian</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-val">{avg_score}</div>
+                        <div class="metric-lbl">Rata-rata Skor</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-val">{n_bidang}</div>
+                        <div class="metric-lbl">Bidang Diuji</div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
 
                 # TABEL LOG PENGGUNAAN AKTIVITAS
                 st.markdown("#### 📡 Log Interaksi AI (Traffic)")
