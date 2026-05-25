@@ -627,7 +627,6 @@ def apply_dynamic_branding(main_bytes, logo_file, posisi):
         if "Kanan Atas" in posisi: pos = (main_img.width - nw - pad, pad)
         elif "Kanan Bawah" in posisi: pos = (main_img.width - nw - pad, main_img.height - nh - pad)
         elif "Kiri Bawah" in posisi: pos = (pad, main_img.height - nh - pad)
-        elif "Tengah Bawah" in posisi: pos = ((main_img.width - nw) // 2, main_img.height - nh - pad)
 
         res = main_img.copy()
         res.paste(logo_img, pos, logo_img)
