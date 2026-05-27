@@ -16,7 +16,7 @@ import google.generativeai as genai
 # KONFIGURASI HALAMAN
 # ==============================================================================
 st.set_page_config(
-    page_title="Inamikro Ad Generator V19 Pro",
+    page_title="Ad Generator V19 Pro",
     layout="wide",
     page_icon="📈",
     initial_sidebar_state="expanded"
@@ -543,14 +543,14 @@ st.markdown("""
     <div class="hero-content">
         <div class="hero-icon">📈</div>
         <div class="hero-text">
-            <h1>Inamikro Ad Generator <span style="color: #fbbf24;">V19 Pro</span></h1>
+            <h1> Ad Generator <span style="color: #fbbf24;">V19 Pro</span></h1>
             <div class="hero-sub">Platform Generator Copywriting & Komparasi Engine Visual Skripsi UMKM</div>
         </div>
     </div>
     <div class="hero-badges">
         <span class="hero-badge">⚡ Generasi Otomatis</span>
         <span class="hero-badge">⚖️ AI Quality Control</span>
-        <span class="hero-badge">📊 KBLI Inamikro</span>
+        <span class="hero-badge">📊 KBLI </span>
     </div>
     <div class="hero-disclaimer">
         <span>🔒</span> 
@@ -1137,7 +1137,7 @@ with col_r:
 
             if st.session_state.img_mem["A"]:
                 st.success("✅ Gambar berhasil dibuat!")
-                st.image(st.session_state.img_mem["A"], caption="🎨 Hasil Render Final Inamikro", use_container_width=True)
+                st.image(st.session_state.img_mem["A"], caption="🎨 Hasil Render Final", use_container_width=True)
                 st.download_button(
                     label="⬇️ Download Gambar Resolusi Tinggi",
                     data=st.session_state.img_mem["A"],
