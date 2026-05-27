@@ -1129,7 +1129,7 @@ with col_r:
             st.info("💡 Klik tombol di bawah untuk membuat foto promosi profesional secara otomatis.")
 
             if st.button("✨ Render Foto Studio (Otomatis)", type="primary", use_container_width=True):
-                with st.spinner("📸 Sedang di studio AI... Merender gambar (sekitar 10 detik)..."):
+                with st.spinner("📸 Sedang di studio AI... Merender gambar (sekitar 1-2 menit)..."):
                     raw = generate_dalle_image(st.session_state.vis_prompt)
                     st.session_state.img_mem["A"] = apply_dynamic_branding(raw, logo_file, posisi_logo) if raw else None
                 catat_aktivitas_sistem("Render Visual Image", st.session_state.get('brand_name', 'UMKM'))
@@ -1187,7 +1187,7 @@ with col_r:
         # --- FORM PENILAIAN UAT & ADMIN AREA ---
         # ============================================================
         st.markdown("<br><hr>", unsafe_allow_html=True)
-        st.markdown("### 📝 Form Penilaian UAT (Dosen / Pakar)")
+        st.markdown("### 📝 Form Penilaian UAT ")
         st.caption("Silakan isi evaluasi kelayakan hasil *generate* AI di bawah ini untuk keperluan pengujian sistem.")
         
         with st.form("gform_mokap", clear_on_submit=True):
