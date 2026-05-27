@@ -16,7 +16,7 @@ import google.generativeai as genai
 # KONFIGURASI HALAMAN
 # ==============================================================================
 st.set_page_config(
-    page_title="Inamikro Ad Generator V18 Pro",
+    page_title="Inamikro Ad Generator V19 Pro",
     layout="wide",
     page_icon="📈",
     initial_sidebar_state="expanded"
@@ -543,7 +543,7 @@ st.markdown("""
     <div class="hero-content">
         <div class="hero-icon">📈</div>
         <div class="hero-text">
-            <h1>Inamikro Ad Generator <span style="color: #fbbf24;">V18 Pro</span></h1>
+            <h1>Inamikro Ad Generator <span style="color: #fbbf24;">V19 Pro</span></h1>
             <div class="hero-sub">Platform Generator Copywriting & Komparasi Engine Visual Skripsi UMKM</div>
         </div>
     </div>
@@ -574,17 +574,21 @@ def load_master_prompt():
 MASTER_PROMPT_FULL = load_master_prompt()
 
 KBLI_DATA = {
-    "56102 - Restoran dan Rumah Makan": {"desc": "Usaha yang menjual makanan siap saji di tempat makan.", "tipe": "food"},
-    "56303 - Rumah Minum/Kafe": {"desc": "Usaha yang menjual minuman dan makanan ringan.", "tipe": "food"},
-    "10794 - Industri Keripik & Makanan Ringan": {"desc": "Usaha produksi makanan ringan dalam kemasan.", "tipe": "food"},
-    "10750 - Industri Makanan Olahan (Frozen Food)": {"desc": "Usaha produksi makanan yang diproses dan dikemas.", "tipe": "food"},
-    "47841 - Perdagangan Eceran Makanan Keliling": {"desc": "Usaha berjualan makanan dan minuman keliling.", "tipe": "food"},
-    "47711 - Perdagangan Eceran Pakaian (Fashion)": {"desc": "Usaha penjualan pakaian jadi eceran.", "tipe": "fashion"},
-    "47726 - Perdagangan Eceran Sepatu/Sandal": {"desc": "Usaha penjualan alas kaki eceran.", "tipe": "fashion"},
-    "47721 - Perdagangan Eceran Kosmetik & Skincare": {"desc": "Usaha penjualan produk kecantikan, makeup, dan perawatan kulit.", "tipe": "fashion"},
-    "32990 - Industri Kerajinan Tangan (Kriya/Aksesoris)": {"desc": "Usaha pembuatan kerajinan, aksesoris, atau souvenir.", "tipe": "fashion"},
-    "96012 - Jasa Penatu/Laundry": {"desc": "Usaha jasa pencucian pakaian.", "tipe": "jasa"},
-    "96020 - Jasa Salon & Perawatan Kecantikan": {"desc": "Usaha layanan pangkas rambut, kosmetik, dan salon.", "tipe": "jasa"}
+    # --- F&B ---
+    "56102 - Restoran/Rumah Makan": {"desc": "Usaha makanan siap saji di tempat makan.", "tipe": "food"},
+    "56303 - Kafe/Kedai Minuman": {"desc": "Usaha yang menjual minuman dan makanan ringan.", "tipe": "food"},
+    "10794 - Makanan Ringan/Keripik": {"desc": "Usaha produksi makanan ringan dalam kemasan.", "tipe": "food"},
+    "10750 - Frozen Food": {"desc": "Usaha produksi makanan beku yang diproses dan dikemas.", "tipe": "food"},
+    # --- FASHION & KRIYA ---
+    "47711 - Perdagangan Pakaian": {"desc": "Usaha penjualan pakaian jadi eceran.", "tipe": "fashion"},
+    "47721 - Kosmetik & Skincare": {"desc": "Usaha penjualan produk kecantikan dan perawatan kulit.", "tipe": "fashion"},
+    "32990 - Kerajinan/Aksesoris": {"desc": "Usaha pembuatan kerajinan tangan, aksesoris, atau souvenir.", "tipe": "fashion"},
+    # --- JASA, PERDAGANGAN UMUM & MANUFAKTUR ---
+    "96020 - Salon & Kecantikan": {"desc": "Usaha layanan pangkas rambut, kosmetik, dan salon.", "tipe": "jasa"},
+    "47192 - Perdagangan Umum/Eceran": {"desc": "Usaha penjualan berbagai macam barang, toko kelontong, atau retail umum.", "tipe": "jasa"},
+    "25110 - Industri Barang Logam": {"desc": "Pembuatan produk logam siap pasang untuk bangunan (railing tangga, kanopi, pagar, tralis).", "tipe": "jasa"},
+    "41019 - Konstruksi/Renovasi Bangunan": {"desc": "Usaha jasa pengerjaan konstruksi, interior, atau renovasi.", "tipe": "jasa"},
+    "00000 - Kategori Usaha Lainnya": {"desc": "Kategori usaha umum lainnya yang belum terdaftar di atas.", "tipe": "jasa"}
 }
 
 BROSUR_ELEMEN = {
@@ -593,8 +597,8 @@ BROSUR_ELEMEN = {
     "jasa": ["Nama Usaha", "Jenis Layanan", "Harga/Tarif", "Keunggulan", "Call-to-Action", "Kontak/WhatsApp"],
 }
 
-def get_elemen_wajib(kategori):
-    tipe = KBLI_DATA.get(kategori, {}).get("tipe", "food")
+def get_elemen_wajib(kategori_key):
+    tipe = KBLI_DATA.get(kategori_key, {}).get("tipe", "food")
     return BROSUR_ELEMEN.get(tipe, BROSUR_ELEMEN["food"])
 
 BACKGROUND_OPTIONS = {
@@ -707,20 +711,20 @@ def parse_output_for_image(markdown_text):
     except Exception: pass
     return "", markdown_text
 
-def build_context_block(kategori, brand_name, keywords_list, gaya, platform, market, mood, background, subjek, elemen_wajib, mode_promo, nama_produk_global, harga_global, promo_global, list_produk, photo_descriptions=None):
+def build_context_block(kategori, brand_name, keywords_list, gaya, platform, market, mood, background, subjek, elemen_wajib, mode_promo, deskripsi_harga_global, list_produk, photo_descriptions=None):
     market_str = ", ".join(market) if market else "Umum"
     keywords_str = ", ".join(keywords_list) if keywords_list else brand_name
     elemen_str = "\n".join([f"  - {e}" for e in elemen_wajib])
     bg_desc = BACKGROUND_OPTIONS.get(background, background)
 
     produk_block = ""
-    if mode_promo == "Diskon Sama untuk Semua (Global)":
-        promo_text = f" (Diberikan Promo Global: {promo_global})" if promo_global else " (Tanpa Promo)"
-        produk_block = f"\n  - Nama Produk: {nama_produk_global}\n  - Harga: Rp {harga_global:,}{promo_text}"
+    if mode_promo == "Deskripsi Bebas (Harga Sama/Massal)":
+        produk_block = f"\n  - Detail Harga & Promo: {deskripsi_harga_global}"
     else:
         for idx, p in enumerate(list_produk):
             p_promo = f" (Promo: {p['promo']})" if p['promo'] else " (Tanpa Promo)"
-            produk_block += f"\n  {idx+1}. {p['nama']} -> Harga: Rp {p['harga']:,}{p_promo}"
+            # Format diubah agar bisa menerima teks harga range seperti "50rb - 250rb"
+            produk_block += f"\n  {idx+1}. {p['nama']} -> Harga: {p['harga']}{p_promo}"
 
     photo_block = ""
     if photo_descriptions:
@@ -744,8 +748,8 @@ Jangan membuat gambar abstrak atau patung 3D geometris! Ide Visual harus berupa 
 """
 
 @st.cache_data(show_spinner=False)
-def generate_ad_text_master(kategori, brand_name, keywords_list, gaya, platform, market, mood, background, subjek, images_bytes_list, elemen_wajib, mode_promo, nama_produk_global, harga_global, promo_global, list_produk, photo_descriptions=None):
-    context = build_context_block(kategori, brand_name, keywords_list, gaya, platform, market, mood, background, subjek, elemen_wajib, mode_promo, nama_produk_global, harga_global, promo_global, list_produk, photo_descriptions)
+def generate_ad_text_master(kategori, brand_name, keywords_list, gaya, platform, market, mood, background, subjek, images_bytes_list, elemen_wajib, mode_promo, deskripsi_harga_global, list_produk, photo_descriptions=None):
+    context = build_context_block(kategori, brand_name, keywords_list, gaya, platform, market, mood, background, subjek, elemen_wajib, mode_promo, deskripsi_harga_global, list_produk, photo_descriptions)
     fidelity = "\n=== ATURAN VISUAL ===\nIde Visual HARUS mereplikasi BENTUK produk dari foto referensi persis.\n" if images_bytes_list else ""
     full_prompt = f"{MASTER_PROMPT_FULL}\n{context}\n{fidelity}\n=== TUGAS: Buat Teks Iklan {platform} ==="
 
@@ -756,7 +760,6 @@ def generate_ad_text_master(kategori, brand_name, keywords_list, gaya, platform,
     class DummyMsg:
         def __init__(self, content): self.content = content
     return llm_generator.invoke([DummyMsg(parts)]).content
-
 @st.cache_data(show_spinner=False)
 def generate_ad_revision_master(main_txt, vis_prompt, revisi_input):
     old_output = f"{main_txt}\n\n**Ide Visual:**\n{vis_prompt}"
@@ -825,11 +828,14 @@ def apply_dynamic_branding(main_bytes, logo_file, posisi):
         logo_img = logo_img.resize((nw, nh), Image.Resampling.LANCZOS)
 
         pad = 28
-        pos = (pad, pad)
+        pos = (pad, pad) # Default Kiri Atas
+        
+        # Logika Penempatan Posisi Watermark
         if "Kanan Atas" in posisi: pos = (main_img.width - nw - pad, pad)
         elif "Kanan Bawah" in posisi: pos = (main_img.width - nw - pad, main_img.height - nh - pad)
         elif "Kiri Bawah" in posisi: pos = (pad, main_img.height - nh - pad)
         elif "Tengah Bawah" in posisi: pos = ((main_img.width - nw) // 2, main_img.height - nh - pad)
+        elif "Tengah Atas" in posisi: pos = ((main_img.width - nw) // 2, pad)
 
         res = main_img.copy()
         res.paste(logo_img, pos, logo_img)
@@ -837,7 +843,6 @@ def apply_dynamic_branding(main_bytes, logo_file, posisi):
         res.save(out, format='PNG')
         return out.getvalue()
     except Exception: return main_bytes
-
 # ==============================================================================
 # HITUNG STEP AKTIF UNTUK STEPPER
 # ==============================================================================
@@ -876,21 +881,6 @@ stepper_html += '</div></div>'
 st.markdown(stepper_html, unsafe_allow_html=True)
 
 # ==============================================================================
-# [SEMENTARA] BANNER STATUS FIRESTORE UNTUK TESTING
-# ==============================================================================
-if db:
-    st.markdown("""
-    <div style='text-align: center; padding: 0.6rem; margin-bottom: 1.5rem; border-radius: 8px; background-color: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #10b981; font-weight: 600;'>
-        🟢 STATUS TESTING: Database Cloud (Firebase) Berhasil Terkoneksi!
-    </div>
-    """, unsafe_allow_html=True)
-else:
-    st.markdown("""
-    <div style='text-align: center; padding: 0.6rem; margin-bottom: 1.5rem; border-radius: 8px; background-color: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; color: #f59e0b; font-weight: 600;'>
-        🟡 STATUS TESTING: Mode Lokal Aktif (Firebase belum konek / secrets.toml belum terbaca)
-    </div>
-    """, unsafe_allow_html=True)
-# ==============================================================================
 # USER INTERFACE LAYOUT
 # ==============================================================================
 col_f, col_r = st.columns([1, 1.35], gap="large")
@@ -915,12 +905,40 @@ with col_f:
         with col_l1:
             logo_file = st.file_uploader("Upload Logo UMKM", type=['png', 'jpg'], help="Format PNG transparan paling direkomendasikan")
         with col_l2:
-            posisi_logo = st.selectbox("Posisi Logo", ["Kanan Atas", "Kiri Atas", "Kanan Bawah", "Kiri Bawah", "Tengah Bawah"])
-        market = st.multiselect(
-            "🎯 Target Market",
-            ["Umum", "Mahasiswa", "Pekerja Kantoran", "Ibu Rumah Tangga", "Anak Sekolah / Remaja"],
-            default=["Umum"]
-        )
+            posisi_logo = st.selectbox("Posisi Logo", ["Kanan Atas", "Kiri Atas", "Kanan Bawah", "Kiri Bawah", "Tengah Bawah", "Tengah Atas"])
+        
+        st.markdown("##### 🎯 Target Market & Audiens")
+        
+        col_tm1, col_tm2 = st.columns(2)
+        with col_tm1:
+            # LOKASI (Multiselect + Manual Input)
+            lokasi_raw = st.multiselect("📍 Lokasi", ["Semua Wilayah", "Surabaya & Sekitarnya", "Sidoarjo", "Gresik", "Malang", "Jawa Timur", "Jabodetabek", "Seluruh Indonesia", "Lainnya (Ketik Manual)"], default=["Semua Wilayah"])
+            lokasi_final = [loc for loc in lokasi_raw if loc != "Lainnya (Ketik Manual)"]
+            if "Lainnya (Ketik Manual)" in lokasi_raw:
+                lokasi_manual = st.text_input("📝 Ketik Lokasi Lainnya (Bisa lebih dari satu)", placeholder="Contoh: Bali, Makassar, Jakarta Selatan")
+                if lokasi_manual: lokasi_final.append(lokasi_manual)
+            
+            # UMUR (Multiselect)
+            umur_raw = st.multiselect("🎂 Umur", ["Semua Umur", "Anak-anak", "Remaja (13-18 thn)", "Dewasa Muda (19-35 thn)", "Dewasa (36-50 thn)", "Orang Tua (> 50 thn)"], default=["Semua Umur"])
+
+        with col_tm2:
+            # GENDER
+            gender = st.selectbox("🚻 Gender", ["Semua Gender", "Perempuan Khusus", "Laki-laki Khusus"])
+            
+            # TARGET PASAR (Multiselect + Manual Input)
+            pasar_raw = st.multiselect("👥 Kategori Target Pasar", ["Umum", "Pelajar / Mahasiswa", "Pekerja Kantoran", "Ibu Rumah Tangga", "Pengusaha / Pebisnis", "Pekerja Lapangan", "Keluarga", "Pasangan / Couple", "Lainnya (Ketik Manual)"], default=["Umum"])
+            pasar_final = [p for p in pasar_raw if p != "Lainnya (Ketik Manual)"]
+            if "Lainnya (Ketik Manual)" in pasar_raw:
+                pasar_manual = st.text_input("📝 Ketik Target Pasar Lainnya", placeholder="Contoh: Gamers, Pecinta Kopi, Ibu Hamil")
+                if pasar_manual: pasar_final.append(pasar_manual)
+
+        # Gabungkan menjadi list agar fungsi AI (build_context_block) tetap bekerja sempurna
+        market = [
+            f"Lokasi: {', '.join(lokasi_final) if lokasi_final else 'Umum'}", 
+            f"Gender: {gender}", 
+            f"Umur: {', '.join(umur_raw) if umur_raw else 'Semua Umur'}",
+            f"Target Pasar: {', '.join(pasar_final) if pasar_final else 'Umum'}"
+        ]
 
     # --- LANGKAH 2: PRODUK ---
     st.markdown("""
@@ -942,34 +960,39 @@ with col_f:
         if keywords:
             st.markdown(" ".join([f'<span class="kw-tag">✦ {k}</span>' for k in keywords]), unsafe_allow_html=True)
 
-        kategori = st.selectbox("📋 Kategori Usaha (KBLI)", list(KBLI_DATA.keys()))
-        st.session_state['kategori'] = kategori
-        st.markdown(f"<div class='kbli-desc'>📌 <b>Deskripsi Sektor:</b> {KBLI_DATA[kategori]['desc']}</div>", unsafe_allow_html=True)
+        kategori_raw = st.selectbox("📋 Kategori Usaha (KBLI)", list(KBLI_DATA.keys()))
+        
+        # Logika memunculkan input manual jika memilih "Lainnya"
+        kategori_final = kategori_raw
+        if kategori_raw == "00000 - Kategori Usaha Lainnya":
+            kategori_manual = st.text_input("📝 Tuliskan Kategori Usaha Anda Secara Spesifik", placeholder="Contoh: Jasa Pembuatan Website, Bengkel Las, Toko Bangunan")
+            if kategori_manual:
+                kategori_final = f"Kustom: {kategori_manual}"
+
+        st.session_state['kategori'] = kategori_final
+        st.markdown(f"<div class='kbli-desc'>📌 <b>Deskripsi Sektor:</b> {KBLI_DATA[kategori_raw]['desc']}</div>", unsafe_allow_html=True)
 
         st.markdown("<hr>", unsafe_allow_html=True)
         mode_promo = st.radio(
             "💸 Metode Penginputan Harga & Promo",
-            ["Diskon Sama untuk Semua (Global)", "Diskon Berbeda Per Item (Input Satu-Satu)"]
+            ["Deskripsi Bebas (Harga Sama/Massal)", "Input Item Manual Satu-per-Satu"]
         )
 
-        nama_produk_global = ""
-        harga_global = 0
-        promo_global = ""
+        deskripsi_harga_global = ""
 
-        if mode_promo == "Diskon Sama untuk Semua (Global)":
-            st.markdown("##### 🌍 Input Harga & Promo Massal (Global)")
-            nama_produk_global = st.text_input("Nama Menu / Kelompok Produk", placeholder="Siomay, Gyoza, dan Dimsum Goreng")
-            c_g1, c_g2 = st.columns(2)
-            with c_g1:
-                harga_global = st.number_input("Estimasi Harga Mulai (Rp)", min_value=0, value=30000, step=1000)
-            with c_g2:
-                promo_global = st.text_input("Promo Massal", placeholder="Beli 2 Gratis 1 / Diskon 10rb")
+        if mode_promo == "Deskripsi Bebas (Harga Sama/Massal)":
+            st.markdown("##### 🌍 Deskripsi Harga & Promo")
+            deskripsi_harga_global = st.text_area(
+                "Tuliskan detail harga dan promo Anda", 
+                placeholder="Contoh: Semua varian menu harganya mulai 15 ribuan aja. Promo khusus hari Jumat beli 2 gratis 1.",
+                height=90
+            )
         else:
             st.markdown("##### ➕ Input Item Manual Satu-per-Satu")
             c_p1, c_p2, c_p3 = st.columns([1.5, 1.2, 1.3])
-            with c_p1: item_nama = st.text_input("Nama Item", placeholder="Siomay", key="input_item_nama")
-            with c_p2: item_harga = st.number_input("Harga (Rp)", min_value=0, value=15000, step=1000, key="input_item_harga")
-            with c_p3: item_promo = st.text_input("Promo", placeholder="Diskon 10rb", key="input_item_promo")
+            with c_p1: item_nama = st.text_input("Nama Item", placeholder="Contoh: Kopi / Baju M", key="input_item_nama")
+            with c_p2: item_harga = st.text_input("Harga / Range Harga", placeholder="Contoh: 15rb - 25rb", key="input_item_harga")
+            with c_p3: item_promo = st.text_input("Promo (Opsional)", placeholder="Contoh: Diskon 10%", key="input_item_promo")
 
             if st.button("➕ Tambah Item ke Daftar", use_container_width=True):
                 if item_nama:
@@ -1023,8 +1046,8 @@ with col_f:
             with st.spinner("🤖 Agent 1: AI sedang meracik copywriting profesional..."):
                 img_bytes = [f.getvalue() for f in foto_produk] if foto_produk else []
                 res = generate_ad_text_master(
-                    kategori, brand_name, keywords, gaya, platform, market, mood, bg, subjek, img_bytes,
-                    get_elemen_wajib(kategori), mode_promo, nama_produk_global, harga_global, promo_global,
+                    kategori_final, brand_name, keywords, gaya, platform, market, mood, bg, subjek, img_bytes,
+                    get_elemen_wajib(kategori_raw), mode_promo, deskripsi_harga_global,
                     st.session_state.daftar_produk_umkm, foto_desc
                 )
                 vis, txt = parse_output_for_image(res)
@@ -1033,7 +1056,7 @@ with col_f:
                 catat_aktivitas_sistem("Generate Copywriting", brand_name)
 
             with st.spinner("⚖️ Agent 2: Mengevaluasi kualitas iklan (Quality Control)..."):
-                hasil_evaluasi = evaluate_ad_quality_master(kategori, txt)
+                hasil_evaluasi = evaluate_ad_quality_master(kategori_final, txt)
                 st.session_state.ai_eval_result = hasil_evaluasi
             st.rerun()
 
