@@ -16,7 +16,7 @@ import google.generativeai as genai
 # KONFIGURASI HALAMAN
 # ==============================================================================
 st.set_page_config(
-    page_title="Inamikro Ad Generator V19 Pro",
+    page_title="Ad Generator V19 Pro",
     layout="wide",
     page_icon="📈",
     initial_sidebar_state="expanded"
@@ -543,14 +543,15 @@ st.markdown("""
     <div class="hero-content">
         <div class="hero-icon">📈</div>
         <div class="hero-text">
-            <h1>Inamikro Ad Generator <span style="color: #fbbf24;">V19 Pro</span></h1>
+            <h1> Ad Generator <span style="color: #fbbf24;">V19 Pro</span></h1>
             <div class="hero-sub">Platform Generator Copywriting & Komparasi Engine Visual Skripsi UMKM</div>
         </div>
     </div>
     <div class="hero-badges">
         <span class="hero-badge">⚡ Generasi Otomatis</span>
         <span class="hero-badge">⚖️ AI Quality Control</span>
-        <span class="hero-badge">📊 KBLI Inamikro</span>
+        <span class="hero-badge">📊 KBLI </span>
+        <span class="hero-badge">📐 Multi-Rasio</span>
     </div>
     <div class="hero-disclaimer">
         <span>🔒</span> 
@@ -602,20 +603,33 @@ def get_elemen_wajib(kategori_key):
     return BROSUR_ELEMEN.get(tipe, BROSUR_ELEMEN["food"])
 
 BACKGROUND_OPTIONS = {
-    "🍽️ Meja Kayu Estetik": "rustic wooden table with warm bokeh background",
-    "⬛ Studio Gelap Elegan": "dark matte studio background with dramatic side lighting",
-    "🌿 Alam Hijau Segar": "fresh green leaves natural outdoor background",
     "⬜ Studio Putih Bersih": "clean white studio background with soft shadows",
+    "🪵 Meja Kayu Estetik": "rustic wooden table with warm bokeh background",
+    "🍳 Dapur Modern": "modern kitchen background with clean countertops",
+    "🌿 Alam Hijau Segar": "fresh green leaves natural outdoor background",
+    "🏙️ Jalanan Perkotaan (Street Style)": "urban street style background with city vibes",
+    "🛁 Kamar Mandi Mewah": "luxurious bathroom background with marble and soft lighting",
+    "💎 Tekstur Marmer Premium": "premium marble texture background",
+    "☕ Kafe Estetik (Cafe Vibes)": "aesthetic cafe interior background with warm lighting",
     "🌸 Pastel Aesthetic": "soft pastel pink and cream aesthetic background",
+    "⬛ Studio Gelap Elegan": "dark matte studio background with dramatic side lighting"
+}
+
+# Mapping Aspek Rasio ke Ukuran Resolusi API OpenAI (DALL-E 3 / GPT Image 2 standard)
+ASPECT_RATIO_OPTIONS = {
+    "1:1 (Persegi / IG Feed)": "1024x1024",
+    "9:16 (Potret / IG Story)": "1024x1792",
+    "16:9 (Lanskap / YouTube)": "1792x1024"
 }
 
 # ==============================================================================
 # INITIALIZE SESSION STATE
 # ==============================================================================
-for k in ['main_txt', 'vis_prompt', 'last_p', 'img_mem', 'chat_history']:
+for k in ['main_txt', 'vis_prompt', 'last_p', 'img_mem', 'chat_history', 'image_size']:
     if k not in st.session_state: st.session_state[k] = None
 if st.session_state.img_mem is None: st.session_state.img_mem = {"A": None}
 if st.session_state.chat_history is None: st.session_state.chat_history = []
+if st.session_state.image_size is None: st.session_state.image_size = "1024x1024"
 
 # Tambahan untuk data skripsi
 if "skripsi_data" not in st.session_state: st.session_state.skripsi_data = []
@@ -723,7 +737,6 @@ def build_context_block(kategori, brand_name, keywords_list, gaya, platform, mar
     else:
         for idx, p in enumerate(list_produk):
             p_promo = f" (Promo: {p['promo']})" if p['promo'] else " (Tanpa Promo)"
-            # Format diubah agar bisa menerima teks harga range seperti "50rb - 250rb"
             produk_block += f"\n  {idx+1}. {p['nama']} -> Harga: {p['harga']}{p_promo}"
 
     photo_block = ""
@@ -760,6 +773,7 @@ def generate_ad_text_master(kategori, brand_name, keywords_list, gaya, platform,
     class DummyMsg:
         def __init__(self, content): self.content = content
     return llm_generator.invoke([DummyMsg(parts)]).content
+
 @st.cache_data(show_spinner=False)
 def generate_ad_revision_master(main_txt, vis_prompt, revisi_input):
     old_output = f"{main_txt}\n\n**Ide Visual:**\n{vis_prompt}"
@@ -799,14 +813,14 @@ ANALISIS PAKAR: [Berikan 2-3 kalimat penjelasan mengapa skor tersebut diberikan,
 # ==============================================================================
 # MODEL GENERATOR OPENAI (GPT-IMAGE-2 / DALL-E)
 # ==============================================================================
-def generate_dalle_image(prompt_text):
+def generate_dalle_image(prompt_text, res_size):
     if not prompt_text: return None
     try:
         client = openai.OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
         context_anchor = f"Commercial product advertisement photography for '{st.session_state.get('brand_name', 'UMKM')}' showing realistic products of {st.session_state.get('kategori', 'Product')}. Photorealistic, high quality, appetizing style, no abstract 3D figures, no geometric sculptures, "
         safe_prompt = (context_anchor + prompt_text)[:900]
 
-        res = client.images.generate(model="gpt-image-2", prompt=safe_prompt, size="1024x1024", n=1)
+        res = client.images.generate(model="dall-e-3", prompt=safe_prompt, size=res_size, n=1)
         if hasattr(res.data[0], 'url') and res.data[0].url:
             return requests.get(res.data[0].url).content
         if hasattr(res.data[0], 'b64_json') and res.data[0].b64_json:
@@ -843,6 +857,7 @@ def apply_dynamic_branding(main_bytes, logo_file, posisi):
         res.save(out, format='PNG')
         return out.getvalue()
     except Exception: return main_bytes
+
 # ==============================================================================
 # HITUNG STEP AKTIF UNTUK STEPPER
 # ==============================================================================
@@ -903,7 +918,7 @@ with col_f:
     with st.container(border=True):
         col_l1, col_l2 = st.columns([1.3, 1])
         with col_l1:
-            logo_file = st.file_uploader("Upload Logo UMKM", type=['png', 'jpg'], help="Format PNG transparan paling direkomendasikan")
+            logo_file = st.file_uploader("Upload Logo UMKM", type=['png', 'jpg', 'jpeg', 'webp'], help="Format PNG transparan paling direkomendasikan")
         with col_l2:
             posisi_logo = st.selectbox("Posisi Logo", ["Kanan Atas", "Kiri Atas", "Kanan Bawah", "Kiri Bawah", "Tengah Bawah", "Tengah Atas"])
         
@@ -1006,7 +1021,7 @@ with col_f:
                     st.rerun()
 
         st.markdown("<hr>", unsafe_allow_html=True)
-        foto_produk = st.file_uploader("📷 Upload Foto Referensi Produk", type=['png', 'jpg'], accept_multiple_files=True, help="Maksimal 3 foto. AI akan menganalisa bentuk fisik produk")
+        foto_produk = st.file_uploader("📷 Upload Foto Referensi Produk", type=['png', 'jpg', 'jpeg', 'webp'], accept_multiple_files=True, help="Maksimal 3 foto. AI akan menganalisa bentuk fisik produk")
         foto_desc = []
         if foto_produk:
             st.markdown('<div class="photo-caption-box">🏷️ <b>Beri keterangan singkat tiap foto</b> agar AI lebih akurat</div>', unsafe_allow_html=True)
@@ -1028,9 +1043,32 @@ with col_f:
 
     with st.container(border=True):
         platform = st.radio("📱 Platform Target", ["Instagram", "WhatsApp", "TikTok"], horizontal=True)
-        cs1, cs2 = st.columns(2)
-        with cs1: gaya = st.selectbox("✍️ Tone Copywriting", ["Santai & Kekinian", "Profesional", "Hard-Selling"])
-        with cs2: mood = st.selectbox("🌅 Mood Visual", ["Cerah", "Gelap Elegan", "Hangat"])
+        cs1, cs2, cs3 = st.columns(3)
+        with cs1: 
+            gaya = st.selectbox("✍️ Tone Copywriting", [
+                "Santai & Kekinian (Gen Z)", 
+                "Profesional & Formal", 
+                "Hard-Selling (Langsung Jualan)", 
+                "Soft-Selling (Persuasif & Menggoda)", 
+                "Edukatif & Informatif", 
+                "Storytelling (Bercerita/Emosional)", 
+                "Humor & Menghibur"
+            ])
+        with cs2: 
+            mood = st.selectbox("🌅 Mood Visual", [
+                "Cerah & Ceria (Bright & Cheerful)", 
+                "Gelap Elegan (Dark & Moody)", 
+                "Hangat & Nyaman (Warm & Cozy)", 
+                "Minimalis Bersih (Clean & Minimalist)", 
+                "Sinematik & Dramatis (Cinematic Lighting)", 
+                "Vintage & Retro (Nostalgia 90an)", 
+                "Soft & Pastel (Lembut & Feminin)", 
+                "Natural (Sinar Matahari Pagi)"
+            ])
+        with cs3: 
+            rasio_pilihan = st.selectbox("📐 Aspek Rasio", list(ASPECT_RATIO_OPTIONS.keys()))
+            st.session_state.image_size = ASPECT_RATIO_OPTIONS[rasio_pilihan]
+
         bg = st.selectbox("🖼️ Background Foto", list(BACKGROUND_OPTIONS.keys()))
         subjek = st.selectbox("👤 Subjek Foto", ["Produk saja", "1 Orang", "Keluarga"])
 
@@ -1089,6 +1127,10 @@ with col_r:
                 )
             else:
                 st.markdown(st.session_state.main_txt)
+                
+                # FITUR BARU: TOMBOL SALIN
+                with st.expander("📋 Tampilkan Teks Mentah (Klik ikon di pojok kanan atas blok untuk menyalin)"):
+                    st.code(st.session_state.main_txt, language="markdown")
 
             # QC PANEL
             if st.session_state.get('ai_eval_result'):
@@ -1126,18 +1168,18 @@ with col_r:
                     label_visibility="collapsed"
                 )
 
-            st.info("💡 Klik tombol di bawah untuk membuat foto promosi profesional secara otomatis.")
+            st.info(f"💡 Klik tombol di bawah untuk membuat foto promosi secara otomatis dengan ukuran: **{st.session_state.image_size}**.")
 
             if st.button("✨ Render Foto Studio (Otomatis)", type="primary", use_container_width=True):
-                with st.spinner("📸 Sedang di studio AI... Merender gambar (sekitar 10 detik)..."):
-                    raw = generate_dalle_image(st.session_state.vis_prompt)
+                with st.spinner("📸 Sedang di studio AI... Merender gambar (sekitar 1-2 menit)..."):
+                    raw = generate_dalle_image(st.session_state.vis_prompt, st.session_state.image_size)
                     st.session_state.img_mem["A"] = apply_dynamic_branding(raw, logo_file, posisi_logo) if raw else None
                 catat_aktivitas_sistem("Render Visual Image", st.session_state.get('brand_name', 'UMKM'))
                 st.rerun()
 
             if st.session_state.img_mem["A"]:
                 st.success("✅ Gambar berhasil dibuat!")
-                st.image(st.session_state.img_mem["A"], caption="🎨 Hasil Render Final Inamikro", use_container_width=True)
+                st.image(st.session_state.img_mem["A"], caption="🎨 Hasil Render Final", use_container_width=True)
                 st.download_button(
                     label="⬇️ Download Gambar Resolusi Tinggi",
                     data=st.session_state.img_mem["A"],
@@ -1187,7 +1229,7 @@ with col_r:
         # --- FORM PENILAIAN UAT & ADMIN AREA ---
         # ============================================================
         st.markdown("<br><hr>", unsafe_allow_html=True)
-        st.markdown("### 📝 Form Penilaian UAT (Dosen / Pakar)")
+        st.markdown("### 📝 Form Penilaian UAT ")
         st.caption("Silakan isi evaluasi kelayakan hasil *generate* AI di bawah ini untuk keperluan pengujian sistem.")
         
         with st.form("gform_mokap", clear_on_submit=True):
