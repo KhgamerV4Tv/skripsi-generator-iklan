@@ -14,7 +14,8 @@ import google.generativeai as genai
 
 # ==============================================================================
 # KONFIGURASI HALAMAN & CSS RESMI INAMIKRO (ELEGAN & MODERN)
-# ==============================================================================
+# =====================
+# =========================================================
 st.set_page_config(page_title="Inamikro Ad Generator V18 Pro", layout="wide", page_icon="📈")
 
 st.markdown("""
