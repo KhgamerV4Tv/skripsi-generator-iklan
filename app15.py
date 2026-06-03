@@ -820,7 +820,7 @@ def generate_dalle_image(prompt_text, res_size):
         context_anchor = f"Commercial product advertisement photography for '{st.session_state.get('brand_name', 'UMKM')}' showing realistic products of {  st.session_state.get('kategori', 'Product')}. Photorealistic, high quality, appetizing style, no abstract 3D figures, no geometric sculptures, "
         safe_prompt = (context_anchor + prompt_text)[:900]
 
-        res = client.images.generate(model="dall-e-3", prompt=safe_prompt, size=res_size, n=1)
+        res = client.images.generate(model="gpt-image-2", prompt=safe_prompt, size=res_size, n=1)
         if hasattr(res.data[0], 'url') and res.data[0].url:
             return requests.get(res.data[0].url).content
         if hasattr(res.data[0], 'b64_json') and res.data[0].b64_json:
