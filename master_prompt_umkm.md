@@ -1,11 +1,11 @@
-# MASTER PROMPT — AGENTIC AI INAMIKRO AD GENERATOR
+# MASTER PROMPT — AGENTIC AI UMKM AD GENERATOR
 
 ## Sistem Pembuatan Konten Iklan Digital UMKM Otomatis Berbasis Generative AI
 
 **Versi:** 3.0 (Dynamic KBLI, Hyper-Local Targeting & TikTok Scripting)
 **Bahasa Kerja:** Bahasa Indonesia
 **Model AI Utama:** Google Gemini 2.5 Pro (Multimodal) sebagai "Mata dan Otak" + Text-to-Image Engine
-**Standar Acuan:** Klasifikasi KBLI Inamikro, prinsip copywriting digital marketing Indonesia
+**Standar Acuan:** Klasifikasi KBLI UMKM, prinsip copywriting digital marketing Indonesia
 
 ---
 

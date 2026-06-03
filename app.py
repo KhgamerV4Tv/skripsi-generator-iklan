@@ -563,7 +563,7 @@ st.markdown("""
 # ==============================================================================
 # DATA MASTER PROMPT & DATA KBLI UMKM
 # ==============================================================================
-MASTER_PROMPT_PATH = Path(__file__).parent / "master_prompt_inamikro.md"
+MASTER_PROMPT_PATH = Path(__file__).parent / "master_prompt_umkm.md"
 
 @st.cache_data
 def load_master_prompt():
@@ -817,7 +817,7 @@ def generate_dalle_image(prompt_text, res_size):
     if not prompt_text: return None
     try:
         client = openai.OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
-        context_anchor = f"Commercial product advertisement photography for '{st.session_state.get('brand_name', 'UMKM')}' showing realistic products of {st.session_state.get('kategori', 'Product')}. Photorealistic, high quality, appetizing style, no abstract 3D figures, no geometric sculptures, "
+        context_anchor = f"Commercial product advertisement photography for '{st.session_state.get('brand_name', 'UMKM')}' showing realistic products of {  st.session_state.get('kategori', 'Product')}. Photorealistic, high quality, appetizing style, no abstract 3D figures, no geometric sculptures, "
         safe_prompt = (context_anchor + prompt_text)[:900]
 
         res = client.images.generate(model="dall-e-3", prompt=safe_prompt, size=res_size, n=1)
@@ -1042,9 +1042,17 @@ with col_f:
     """, unsafe_allow_html=True)
 
     with st.container(border=True):
-        platform = st.radio("📱 Platform Target", ["Instagram", "WhatsApp", "TikTok"], horizontal=True)
-        cs1, cs2, cs3 = st.columns(3)
-        with cs1: 
+       # --- BARIS 1 ---
+        col1, col2 = st.columns([6, 4])
+        with col1:
+            platform = st.radio("📱 Platform Target", ["Instagram", "WhatsApp", "TikTok"], horizontal=True)
+        with col2:
+            rasio_pilihan = st.selectbox("📐 Aspek Rasio", list(ASPECT_RATIO_OPTIONS.keys()))
+            st.session_state.image_size = ASPECT_RATIO_OPTIONS[rasio_pilihan]
+
+            # --- BARIS 2 ---
+        col3, col4 = st.columns(2)
+        with col3: 
             gaya = st.selectbox("✍️ Tone Copywriting", [
                 "Santai & Kekinian (Gen Z)", 
                 "Profesional & Formal", 
@@ -1054,7 +1062,7 @@ with col_f:
                 "Storytelling (Bercerita/Emosional)", 
                 "Humor & Menghibur"
             ])
-        with cs2: 
+        with col4: 
             mood = st.selectbox("🌅 Mood Visual", [
                 "Cerah & Ceria (Bright & Cheerful)", 
                 "Gelap Elegan (Dark & Moody)", 
@@ -1065,10 +1073,7 @@ with col_f:
                 "Soft & Pastel (Lembut & Feminin)", 
                 "Natural (Sinar Matahari Pagi)"
             ])
-        with cs3: 
-            rasio_pilihan = st.selectbox("📐 Aspek Rasio", list(ASPECT_RATIO_OPTIONS.keys()))
-            st.session_state.image_size = ASPECT_RATIO_OPTIONS[rasio_pilihan]
-
+        # --- BARIS BAWAH (Melebar Penuh) ---
         bg = st.selectbox("🖼️ Background Foto", list(BACKGROUND_OPTIONS.keys()))
         subjek = st.selectbox("👤 Subjek Foto", ["Produk saja", "1 Orang", "Keluarga"])
 
