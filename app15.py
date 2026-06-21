@@ -803,13 +803,12 @@ Naskah Iklan:
 {text_result}
 
 Berikan penilaian analitis dan ketat. Tampilkan output HANYA dalam format ini:
-SKOR KELAYAKAN: [Berikan angka 1-100]
+SKOR KELAYAKAN: (Hanya tuliskan satu angka murni 1-100 di sini, tanpa simbol atau teks tambahan apapun)
 ANALISIS PAKAR: [Berikan 2-3 kalimat penjelasan mengapa skor tersebut diberikan, sebutkan kelebihan dan kekurangannya berdasarkan target pasar]
 """
     class DummyMsg:
         def __init__(self, content): self.content = content
     return llm_generator.invoke([DummyMsg(prompt)]).content
-
 # ==============================================================================
 # MODEL GENERATOR OPENAI (GPT-IMAGE-2 / DALL-E)
 # ==============================================================================
@@ -1139,17 +1138,41 @@ with col_r:
 
             # QC PANEL
             if st.session_state.get('ai_eval_result'):
-                st.markdown("""
-                <div class="qc-card">
-                    <div class="qc-icon">✅</div>
-                    <div>
-                        <div class="qc-title">Lulus Uji Kualitas Pakar AI</div>
-                        <div class="qc-sub">Quality Control oleh LLM-as-a-Judge Agent</div>
+                hasil_evaluasi = st.session_state.ai_eval_result
+                
+                # 1. Cari angka skor pakai Regex
+                match = re.search(r'SKOR KELAYAKAN:\s*(\d+)', hasil_evaluasi)
+                skor = 100 # Default jika regex gagal membaca
+                if match:
+                    skor = int(match.group(1))
+
+                # 2. Logika Penilaian (Batas Minimal = 70)
+                if skor >= 70:
+                    # LULUS (Kotak Hijau)
+                    st.markdown(f"""
+                    <div class="qc-card" style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border-color: #6ee7b7;">
+                        <div class="qc-icon">✅</div>
+                        <div>
+                            <div class="qc-title">Lulus Uji Kualitas Pakar AI</div>
+                            <div class="qc-sub">Copywriting memenuhi standar promosi (Skor: {skor}/100)</div>
+                        </div>
                     </div>
-                </div>
-                """, unsafe_allow_html=True)
+                    """, unsafe_allow_html=True)
+                else:
+                    # TIDAK LULUS (Kotak Merah Peringatan)
+                    st.markdown(f"""
+                    <div class="qc-card" style="background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%); border-color: #fca5a5;">
+                        <div class="qc-icon" style="background: linear-gradient(135deg, #e11d48, #be123c);">⚠️</div>
+                        <div>
+                            <div class="qc-title" style="color: #9f1239;">Perlu Revisi (Tidak Lulus QC)</div>
+                            <div class="qc-sub" style="color: #e11d48;">Kualitas konten di bawah standar (Skor: {skor}/100)</div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                # Memunculkan teks alasannya
                 with st.expander("📊 Lihat Detail Analisis Pakar AI"):
-                    st.markdown(st.session_state.ai_eval_result)
+                    st.markdown(hasil_evaluasi)
 
         st.markdown("<br>", unsafe_allow_html=True)
 
