@@ -13,8 +13,9 @@ from PIL import Image
 import google.generativeai as genai
 
 # ==============================================================================
-# KONFIGURASI HALAMAN
+# KONFIGURASI HALAMAN UTAMA
 # ==============================================================================
+# Mengatur konfigurasi dasar antarmuka pengguna (UI) termasuk judul dan layout grid (wide)
 st.set_page_config(
     page_title="Ad Generator V19 Pro",
     layout="wide",
@@ -23,13 +24,14 @@ st.set_page_config(
 )
 
 # ==============================================================================
-# CSS — DESAIN AKADEMIK ELEGAN UNTUK PRESENTASI SKRIPSI
+# CSS — DESAIN ANTARMUKA & STYLING (CLEAN UI)
 # ==============================================================================
+# Injeksi CSS statis untuk kustomisasi tema dan palet gradasi Streamlit secara global
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap');
 
-    /* ===== GLOBAL ===== */
+    /* ===== PENGATURAN FONT & TYPOGRAPHY GLOBAL ===== */
     html, body, [data-testid="stAppViewContainer"], [data-testid="stSidebar"] {
         font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
     }
@@ -38,11 +40,12 @@ st.markdown("""
         background: var(--background-color);
     }
 
-    /* Sembunyikan footer Streamlit, biarkan menu titik 3 muncul untuk ganti theme */
+    /* Menyembunyikan footer bawaan Streamlit untuk antarmuka yang lebih imersif */
     footer { visibility: hidden; }
     .block-container { padding-top: 1.5rem !important; padding-bottom: 3rem !important; }
 
-    /* ===== HERO HEADER ===== */
+    /* ===== HERO HEADER (BANNER ATAS) ===== */
+    /* Mengatur palet warna gradasi dan efek bayangan komponen banner utama */
     .hero-header {
         background: linear-gradient(135deg, #1e1b4b 0%, #3730a3 50%, #4f46e5 100%);
         padding: 2.2rem 2.5rem;
@@ -115,7 +118,8 @@ st.markdown("""
         z-index: 2;
     }
 
-    /* ===== STEP PROGRESS STEPPER ===== */
+    /* ===== STEP PROGRESS STEPPER (INDIKATOR LANGKAH) ===== */
+    /* Mengelola gaya visual indikator proses (1-6) di UI */
     .stepper-wrap {
         background: var(--secondary-background-color, #ffffff);
         border-radius: 16px;
@@ -155,7 +159,7 @@ st.markdown("""
     }
     .step-item:last-child .step-connector { display: none; }
 
-    /* ===== PERBAIKAN WARNA STEPPER PROGRESS BAR ===== */
+    /* ===== STATUS WARNA STEPPER PROGRESS BAR ===== */
     .step-circle {
         background: #334155 !important;
         color: #94a3b8 !important;
@@ -175,7 +179,7 @@ st.markdown("""
     }
     .step-connector { background: #334155 !important; }
 
-    /* ===== SECTION HEADER ===== */
+    /* ===== SECTION HEADER (MODUL KONTEN) ===== */
     .section-card-header {
         display: flex; align-items: center; gap: 0.7rem;
         margin: 0 0 1rem 0;
@@ -203,7 +207,7 @@ st.markdown("""
         opacity: 0.85;
     }
 
-    /* ===== CONTAINER CARDS ===== */
+    /* ===== CONTAINER CARDS (BINGKAI INPUT) ===== */
     div[data-testid="stVerticalBlockBorderWithFormatting"] {
         background-color: var(--secondary-background-color, #ffffff) !important;
         border: 1px solid rgba(128, 128, 128, 0.2) !important;
@@ -216,7 +220,8 @@ st.markdown("""
         box-shadow: 0 4px 6px rgba(15, 23, 42, 0.05), 0 12px 25px -5px rgba(15, 23, 42, 0.1) !important;
     }
 
-    /* ===== INFO BOXES ===== */
+    /* ===== KOTAK INFORMASI (INFO BOXES KBLI) ===== */
+    /* Mengatur skema warna gradasi untuk modul peringatan/informasi KBLI dan caption foto */
     .kbli-desc, .elemen-box, .photo-caption-box {
         border-radius: 10px;
         padding: 0.85rem 1.1rem;
@@ -240,7 +245,7 @@ st.markdown("""
         margin-bottom: 0.9rem;
     }
 
-    /* ===== KEYWORD TAGS ===== */
+    /* ===== KEYWORD TAGS (LABEL USP) ===== */
     .kw-tag {
         background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
         border-radius: 999px;
@@ -254,7 +259,8 @@ st.markdown("""
         box-shadow: 0 1px 3px rgba(14, 165, 233, 0.15);
     }
 
-    /* ===== BUTTONS ===== */
+    /* ===== BUTTONS (TOMBOL TRIGGER) ===== */
+    /* Konfigurasi gaya tombol pemicu utama (Primary Button Action Generate Iklan) */
     .stButton > button {
         border-radius: 12px !important;
         font-weight: 600 !important;
@@ -266,14 +272,14 @@ st.markdown("""
         border: none !important;
         box-shadow: 0 4px 14px -2px rgba(79, 70, 229, 0.45) !important;
         padding: 0.7rem 1.2rem !important;
-        color: white !important;
+        color: orange !important;
     }
     .stButton > button[kind="primary"]:hover {
         transform: translateY(-1px);
         box-shadow: 0 8px 20px -2px rgba(79, 70, 229, 0.6) !important;
     }
 
-    /* ===== INPUTS & WIDGETS ===== */
+    /* ===== INPUTS & WIDGETS (FORM ELEMENTS) ===== */
     .stTextInput input, .stTextArea textarea, .stNumberInput input, 
     .stSelectbox [data-baseweb="select"], 
     .stMultiSelect [data-baseweb="select"],
@@ -303,7 +309,7 @@ st.markdown("""
         font-weight: 600 !important;
     }
 
-    /* --- PERBAIKAN FILE UPLOADER --- */
+    /* --- GAYA KOMPONEN FILE UPLOADER --- */
     [data-testid="stFileUploaderDropzone"] div,
     [data-testid="stFileUploaderDropzone"] p,
     [data-testid="stFileUploaderDropzone"] small {
@@ -317,7 +323,7 @@ st.markdown("""
         font-weight: 600 !important;
     }
 
-    /* --- PERBAIKAN MULTISELECT TAG --- */
+    /* --- GAYA MULTISELECT TAG --- */
     .stMultiSelect [data-baseweb="tag"] {
         background-color: rgba(79, 70, 229, 0.15) !important; 
         border: 1px solid #a78bfa !important;
@@ -328,7 +334,7 @@ st.markdown("""
         font-weight: 600 !important;
     }
 
-    /* ===== PERBAIKAN TEKS RADIO BUTTON & SUB-HEADING ===== */
+    /* ===== TEKS RADIO BUTTON & SUB-HEADING ===== */
     .stRadio [data-testid="stMarkdownContainer"] p {
         color: var(--text-color, #f1f5f9) !important;
         font-weight: 500 !important;
@@ -343,7 +349,8 @@ st.markdown("""
         color: var(--text-color, #f1f5f9) !important;
     }
 
-    /* ===== QC SUCCESS CARD ===== */
+    /* ===== QC SUCCESS CARD (EVALUASI AI) ===== */
+    /* Konfigurasi panel kartu notifikasi sukses untuk modul Quality Control LLM Judge */
     .qc-card {
         background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
         border: 1px solid #6ee7b7;
@@ -364,7 +371,7 @@ st.markdown("""
     .qc-title { font-weight: 700; color: #065f46; font-size: 0.95rem; }
     .qc-sub { font-size: 0.78rem; color: #047857; margin-top: 0.15rem; }
 
-    /* ===== EMPTY STATE ===== */
+    /* ===== EMPTY STATE (TAMPILAN AWAL) ===== */
     .empty-state {
         background: var(--secondary-background-color, #ffffff);
         border: 2px dashed rgba(128, 128, 128, 0.35);
@@ -399,8 +406,9 @@ st.markdown("""
     .stRadio > div { gap: 0.5rem; }
 
     /* =============================================================
-       DARK MODE ADAPTIVE
+       ADAPTASI TEMA DARK MODE (MEDIA QUERIES)
        ============================================================= */
+    /* Menyesuaikan skema warna secara dinamis terhadap preferensi mode gelap browser eksternal */
     @media (prefers-color-scheme: dark) {
         [data-testid="stAppViewContainer"] {
             background: linear-gradient(180deg, #0f172a 0%, #1e1b4b 100%);
@@ -467,7 +475,7 @@ st.markdown("""
         .metric-val { color: #a78bfa !important; }
         .metric-lbl { color: #94a3b8 !important; }
 
-        /* Inputs di dark mode */
+        /* Komponen input widget di dark mode */
         .stTextInput input, .stTextArea textarea, .stNumberInput input,
         .stSelectbox [data-baseweb="select"], 
         .stMultiSelect [data-baseweb="select"],
@@ -500,7 +508,7 @@ st.markdown("""
         hr { border-color: #334155 !important; }
     }
 
-    /* Streamlit's official dark theme class support */
+    /* Dukungan tema gelap resmi (native fallback) dari internal state frameowrk Streamlit */
     .stApp[data-theme="dark"] [data-testid="stAppViewContainer"] {
         background: linear-gradient(180deg, #0f172a 0%, #1e1b4b 100%);
     }
@@ -536,8 +544,9 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==============================================================================
-# HERO HEADER
+# HERO HEADER HTML RENDER
 # ==============================================================================
+# Implementasi HTML statis untuk merender struktur grafis Hero Banner di sisi klien
 st.markdown("""
 <div class="hero-header">
     <div class="hero-content">
@@ -561,8 +570,9 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==============================================================================
-# DATA MASTER PROMPT & DATA KBLI UMKM
+# STRUKTUR DATA UTAMA: MASTER PROMPT & KAMUS KBLI
 # ==============================================================================
+# Memuat master prompt (instruksi basis model AI) dari file markdown eksternal
 MASTER_PROMPT_PATH = Path(__file__).parent / "master_prompt_umkm.md"
 
 @st.cache_data
@@ -574,6 +584,7 @@ def load_master_prompt():
 
 MASTER_PROMPT_FULL = load_master_prompt()
 
+# Modul penyusunan struktur kamus data (Dictionary) untuk enumerasi Standar KBLI Nasional
 KBLI_DATA = {
     # --- F&B ---
     "56102 - Restoran/Rumah Makan": {"desc": "Usaha makanan siap saji di tempat makan.", "tipe": "food"},
@@ -602,6 +613,7 @@ def get_elemen_wajib(kategori_key):
     tipe = KBLI_DATA.get(kategori_key, {}).get("tipe", "food")
     return BROSUR_ELEMEN.get(tipe, BROSUR_ELEMEN["food"])
 
+# Pemetaan enumerasi latar belakang visual natural ke dalam string komputasi prompt OpenAI API
 BACKGROUND_OPTIONS = {
     "⬜ Studio Putih Bersih": "clean white studio background with soft shadows",
     "🪵 Meja Kayu Estetik": "rustic wooden table with warm bokeh background",
@@ -615,7 +627,7 @@ BACKGROUND_OPTIONS = {
     "⬛ Studio Gelap Elegan": "dark matte studio background with dramatic side lighting"
 }
 
-# Mapping Aspek Rasio ke Ukuran Resolusi API OpenAI (DALL-E 3 / GPT Image 2 standard)
+# Pemetaan utilitas parameter resolusi rasio standar DALL-E 3
 ASPECT_RATIO_OPTIONS = {
     "1:1 (Persegi / IG Feed)": "1024x1024",
     "9:16 (Potret / IG Story)": "1024x1792",
@@ -623,22 +635,24 @@ ASPECT_RATIO_OPTIONS = {
 }
 
 # ==============================================================================
-# INITIALIZE SESSION STATE
+# MANAJEMEN STATE LOKAL (SESSION STATE)
 # ==============================================================================
+# Inisialisasi struktur penyimpanan variabel sesi untuk presistensi memori DOM reload
 for k in ['main_txt', 'vis_prompt', 'last_p', 'img_mem', 'chat_history', 'image_size']:
     if k not in st.session_state: st.session_state[k] = None
 if st.session_state.img_mem is None: st.session_state.img_mem = {"A": None}
 if st.session_state.chat_history is None: st.session_state.chat_history = []
 if st.session_state.image_size is None: st.session_state.image_size = "1024x1024"
 
-# Tambahan untuk data skripsi
+# Kompartemen persistensi array list untuk data temporer form
 if "skripsi_data" not in st.session_state: st.session_state.skripsi_data = []
 if "daftar_produk_umkm" not in st.session_state: st.session_state.daftar_produk_umkm = []
 if "usage_logs" not in st.session_state: st.session_state.usage_logs = []
 
 # ==============================================================================
-# FUNGSI PENANGANAN KREDENSIAL GCP & FIRESTORE
+# PENANGANAN BACKEND: KREDENSIAL GCP & DATABASE FIRESTORE
 # ==============================================================================
+# Parsing Service Account Key dari manajemen st.secrets guna autentikasi Google Cloud
 def load_gcp_credentials():
     from google.oauth2.service_account import Credentials
     secret_keys = st.secrets.keys()
@@ -661,8 +675,9 @@ def get_firestore_client():
 db = get_firestore_client()
 
 # ==============================================================================
-# FUNGSI PENCATAT LOG PENGGUNAAN (TRAFFIC)
+# FUNGSI PENCATAT LOG AKTIVITAS SISTEM
 # ==============================================================================
+# Modul audit sistem untuk perekaman payload data penggunaan menuju ke Firebase / Session Array
 def catat_aktivitas_sistem(aktivitas, nama_brand):
     log_entry = {
         "Waktu": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -676,8 +691,9 @@ def catat_aktivitas_sistem(aktivitas, nama_brand):
         st.session_state.usage_logs.append(log_entry)
 
 # ==============================================================================
-# ENGINE GENERATOR TEKS GEMINI SDK
+# KELAS WRAPPER: ENGINE API GOOGLE GEMINI MULTIMODAL
 # ==============================================================================
+# Implementasi OOP (Object-Oriented Programming) untuk interaksi instansiasi endpoint model LLM Google Gemini
 class GeminiStudioWrapper:
     def __init__(self, model_name, temperature):
         self.model_name = model_name
@@ -691,6 +707,7 @@ class GeminiStudioWrapper:
             contents = []
             msg = messages[0] if isinstance(messages, list) else messages
 
+            # Penanganan parsial struktur buffer jika argumen berjenis Multimodal (Teks & Visual BLOB Image)
             if hasattr(msg, 'content') and isinstance(msg.content, list):
                 for part in msg.content:
                     if part.get("type") == "text": contents.append(part.get("text", ""))
@@ -712,8 +729,9 @@ class GeminiStudioWrapper:
 llm_generator = GeminiStudioWrapper(model_name="gemini-2.5-pro", temperature=0.3)
 
 # ==============================================================================
-# PARSING & PROMPT BUILDING
+# PEMROSESAN PROMPT ENGINEERING (RAG / CONTEXT INJECTION)
 # ==============================================================================
+# Implementasi operasi ekspresi regular (Regex) untuk filtrasi output respon LLM
 def parse_output_for_image(markdown_text):
     try:
         matches = list(re.finditer(r"\*\*Ide Visual:\*\*[\s]*(.*?)(?=\n\n|\Z)", markdown_text, re.IGNORECASE | re.DOTALL))
@@ -725,6 +743,7 @@ def parse_output_for_image(markdown_text):
     except Exception: pass
     return "", markdown_text
 
+# Fungsi penyusunan struktur parameter data empiris ke dalam blok Prompt berbasis Text Interpolation
 def build_context_block(kategori, brand_name, keywords_list, gaya, platform, market, mood, background, subjek, elemen_wajib, mode_promo, deskripsi_harga_global, list_produk, photo_descriptions=None):
     market_str = ", ".join(market) if market else "Umum"
     keywords_str = ", ".join(keywords_list) if keywords_list else brand_name
@@ -793,6 +812,7 @@ Pastikan output akhir TETAP mengikuti format baku (ada Headline, Caption, Hashta
         def __init__(self, content): self.content = content
     return llm_generator.invoke([DummyMsg(prompt)]).content
 
+# Implementasi mekanisme Auto-Evaluating menggunakan metodologi LLM-as-a-Judge
 @st.cache_data(show_spinner=False)
 def evaluate_ad_quality_master(kategori, text_result):
     prompt = f"""Kamu adalah Dosen Pakar Marketing Digital & AI.
@@ -811,8 +831,9 @@ ANALISIS PAKAR: [Berikan 2-3 kalimat penjelasan mengapa skor tersebut diberikan,
     return llm_generator.invoke([DummyMsg(prompt)]).content
 
 # ==============================================================================
-# MODEL GENERATOR OPENAI (GPT-IMAGE-2 / DALL-E)
+# MODUL INTEGRASI OPENAI UNTUK PIPELINE GENERASI VISUAL
 # ==============================================================================
+# Endpoint pemanggilan parameter Prompt DALL-E (Text-to-Image) melalui instance client HTTP
 def generate_dalle_image(prompt_text, res_size):
     if not prompt_text: return None
     try:
@@ -820,7 +841,7 @@ def generate_dalle_image(prompt_text, res_size):
         context_anchor = f"Commercial product advertisement photography for '{st.session_state.get('brand_name', 'UMKM')}' showing realistic products of {  st.session_state.get('kategori', 'Product')}. Photorealistic, high quality, appetizing style, no abstract 3D figures, no geometric sculptures, "
         safe_prompt = (context_anchor + prompt_text)[:900]
 
-        res = client.images.generate(model="dall-e-3", prompt=safe_prompt, size=res_size, n=1)
+        res = client.images.generate(model="gpt-image-2", prompt=safe_prompt, size=res_size, n=1)
         if hasattr(res.data[0], 'url') and res.data[0].url:
             return requests.get(res.data[0].url).content
         if hasattr(res.data[0], 'b64_json') and res.data[0].b64_json:
@@ -830,8 +851,9 @@ def generate_dalle_image(prompt_text, res_size):
         return None
 
 # ==============================================================================
-# POST-PROCESSING WATERMARK
+# FUNGSI MANIPULASI BITMAP (ALGORITMA ALPHA COMPOSITING)
 # ==============================================================================
+# Pemrosesan matrix gambar pada library Pillow (PIL) untuk integrasi dinamik watermarking logo entitas
 def apply_dynamic_branding(main_bytes, logo_file, posisi):
     if not main_bytes or not logo_file: return main_bytes
     try:
@@ -842,9 +864,9 @@ def apply_dynamic_branding(main_bytes, logo_file, posisi):
         logo_img = logo_img.resize((nw, nh), Image.Resampling.LANCZOS)
 
         pad = 28
-        pos = (pad, pad) # Default Kiri Atas
+        pos = (pad, pad) # Konfigurasi ordinat penempelan default (Posisi X/Y: Kiri Atas)
         
-        # Logika Penempatan Posisi Watermark
+        # Eksekusi blok logikal pembentukan ordinat peletakan layer sekunder adaptif
         if "Kanan Atas" in posisi: pos = (main_img.width - nw - pad, pad)
         elif "Kanan Bawah" in posisi: pos = (main_img.width - nw - pad, main_img.height - nh - pad)
         elif "Kiri Bawah" in posisi: pos = (pad, main_img.height - nh - pad)
@@ -859,7 +881,7 @@ def apply_dynamic_branding(main_bytes, logo_file, posisi):
     except Exception: return main_bytes
 
 # ==============================================================================
-# HITUNG STEP AKTIF UNTUK STEPPER
+# FUNGSI KALKULASI PROGRES INDIKATOR KONDISIONAL (STEPPER BAR)
 # ==============================================================================
 def get_active_step():
     if st.session_state.get('main_txt') and st.session_state.img_mem.get('A'):
@@ -871,7 +893,7 @@ def get_active_step():
 active_step = get_active_step()
 
 # ==============================================================================
-# STEPPER VISUALISASI 6 LANGKAH
+# RENDER HTML DINAMIK: STEPPER VISUALISASI
 # ==============================================================================
 steps_data = [
     ("1", "Branding"),
@@ -896,12 +918,13 @@ stepper_html += '</div></div>'
 st.markdown(stepper_html, unsafe_allow_html=True)
 
 # ==============================================================================
-# USER INTERFACE LAYOUT
+# INISIALISASI STRUKTUR LAYOUT HALAMAN (GRID SYSTEM)
 # ==============================================================================
+# Menerapkan mekanisme pembelahan jendela antarmuka UI (col_f: Form Input, col_r: Output View)
 col_f, col_r = st.columns([1, 1.35], gap="large")
 
 # ============================================================
-# --- KOLOM KIRI: INPUT DATA ---
+# BLOK KIRI: MENANGANI INPUT DATA PARAMETER PENGGUNA
 # ============================================================
 with col_f:
     # --- LANGKAH 1: BRANDING ---
@@ -918,6 +941,7 @@ with col_f:
     with st.container(border=True):
         col_l1, col_l2 = st.columns([1.3, 1])
         with col_l1:
+            # Implementasi modul interaktif uploader berkas logo komersial (File Uploader Widget)
             logo_file = st.file_uploader("Upload Logo UMKM", type=['png', 'jpg', 'jpeg', 'webp'], help="Format PNG transparan paling direkomendasikan")
         with col_l2:
             posisi_logo = st.selectbox("Posisi Logo", ["Kanan Atas", "Kiri Atas", "Kanan Bawah", "Kiri Bawah", "Tengah Bawah", "Tengah Atas"])
@@ -926,33 +950,37 @@ with col_f:
         
         col_tm1, col_tm2 = st.columns(2)
         with col_tm1:
-            # LOKASI (Multiselect + Manual Input)
+            # Penanganan parameter demografi (Lokasi & Umur) target pasar berbasis variabel himpunan dinamis (Array Selection)
             lokasi_raw = st.multiselect("📍 Lokasi", ["Semua Wilayah", "Surabaya & Sekitarnya", "Sidoarjo", "Gresik", "Malang", "Jawa Timur", "Jabodetabek", "Seluruh Indonesia", "Lainnya (Ketik Manual)"], default=["Semua Wilayah"])
             lokasi_final = [loc for loc in lokasi_raw if loc != "Lainnya (Ketik Manual)"]
             if "Lainnya (Ketik Manual)" in lokasi_raw:
                 lokasi_manual = st.text_input("📝 Ketik Lokasi Lainnya (Bisa lebih dari satu)", placeholder="Contoh: Bali, Makassar, Jakarta Selatan")
                 if lokasi_manual: lokasi_final.append(lokasi_manual)
             
-            # UMUR (Multiselect)
             umur_raw = st.multiselect("🎂 Umur", ["Semua Umur", "Anak-anak", "Remaja (13-18 thn)", "Dewasa Muda (19-35 thn)", "Dewasa (36-50 thn)", "Orang Tua (> 50 thn)"], default=["Semua Umur"])
 
         with col_tm2:
-            # GENDER
             gender = st.selectbox("🚻 Gender", ["Semua Gender", "Perempuan Khusus", "Laki-laki Khusus"])
-            
-            # TARGET PASAR (Multiselect + Manual Input)
             pasar_raw = st.multiselect("👥 Kategori Target Pasar", ["Umum", "Pelajar / Mahasiswa", "Pekerja Kantoran", "Ibu Rumah Tangga", "Pengusaha / Pebisnis", "Pekerja Lapangan", "Keluarga", "Pasangan / Couple", "Lainnya (Ketik Manual)"], default=["Umum"])
             pasar_final = [p for p in pasar_raw if p != "Lainnya (Ketik Manual)"]
+            hobi_input_raw = st.multiselect("🏄‍♂️ Hobi / Kebiasaan", ["Umum", "Gamer", "pemancing", "memasak", "Business", "Penjait", "Lainnya (Ketik Manual)"], default=["Umum"])
+            hobi_input_final = [h for h in hobi_input_raw if h != "Lainnya (Ketik Manual)"]
+            if "Lainnya (Ketik Manual)" in hobi_input_raw:
+                Hobi_input_manual = st.text_input("📝 Ketik hobi Lainnya (Bisa lebih dari satu )", placeholder="Contoh: Gamers, Pecinta Kopi, Ibu Hamil")
+                if Hobi_input_manual: hobi_input_final.append(Hobi_input_manual)
             if "Lainnya (Ketik Manual)" in pasar_raw:
                 pasar_manual = st.text_input("📝 Ketik Target Pasar Lainnya", placeholder="Contoh: Gamers, Pecinta Kopi, Ibu Hamil")
                 if pasar_manual: pasar_final.append(pasar_manual)
+            toko_online = st.text_input("nama toko Online (misal di : shopee )")
 
-        # Gabungkan menjadi list agar fungsi AI (build_context_block) tetap bekerja sempurna
+        # Kompilasi blok variabel matriks parameter target audiens menjadi struktur list data komprehensif
         market = [
             f"Lokasi: {', '.join(lokasi_final) if lokasi_final else 'Umum'}", 
             f"Gender: {gender}", 
             f"Umur: {', '.join(umur_raw) if umur_raw else 'Semua Umur'}",
             f"Target Pasar: {', '.join(pasar_final) if pasar_final else 'Umum'}"
+            f"Hobi Input: {', '.join(hobi_input_final) if hobi_input_final else 'Umum'}"
+            f"Toko Online: {toko_online}"
         ]
 
     # --- LANGKAH 2: PRODUK ---
@@ -977,7 +1005,7 @@ with col_f:
 
         kategori_raw = st.selectbox("📋 Kategori Usaha (KBLI)", list(KBLI_DATA.keys()))
         
-        # Logika memunculkan input manual jika memilih "Lainnya"
+        # Kontrol kondisional untuk modifikasi nilai string kategori KBLI kustom jika pemilihan eksternal dipicu
         kategori_final = kategori_raw
         if kategori_raw == "00000 - Kategori Usaha Lainnya":
             kategori_manual = st.text_input("📝 Tuliskan Kategori Usaha Anda Secara Spesifik", placeholder="Contoh: Jasa Pembuatan Website, Bengkel Las, Toko Bangunan")
@@ -1021,6 +1049,7 @@ with col_f:
                     st.rerun()
 
         st.markdown("<hr>", unsafe_allow_html=True)
+        # Manajemen transmisi aset gambar referensi untuk injeksi model kapabilitas LLM Vision Multimodal
         foto_produk = st.file_uploader("📷 Upload Foto Referensi Produk", type=['png', 'jpg', 'jpeg', 'webp'], accept_multiple_files=True, help="Maksimal 3 foto. AI akan menganalisa bentuk fisik produk")
         foto_desc = []
         if foto_produk:
@@ -1042,7 +1071,7 @@ with col_f:
     """, unsafe_allow_html=True)
 
     with st.container(border=True):
-       # --- BARIS 1 ---
+       # Pengklasteran widget antarmuka ke dalam kolom grid proporsional
         col1, col2 = st.columns([6, 4])
         with col1:
             platform = st.radio("📱 Platform Target", ["Instagram", "WhatsApp", "TikTok"], horizontal=True)
@@ -1050,7 +1079,6 @@ with col_f:
             rasio_pilihan = st.selectbox("📐 Aspek Rasio", list(ASPECT_RATIO_OPTIONS.keys()))
             st.session_state.image_size = ASPECT_RATIO_OPTIONS[rasio_pilihan]
 
-            # --- BARIS 2 ---
         col3, col4 = st.columns(2)
         with col3: 
             gaya = st.selectbox("✍️ Tone Copywriting", [
@@ -1063,6 +1091,7 @@ with col_f:
                 "Humor & Menghibur"
             ])
         with col4: 
+            # Implementasi list pilihan visual tone mood untuk parameter ekstraksi prompt algoritma DALL-E Image Generation
             mood = st.selectbox("🌅 Mood Visual", [
                 "Cerah & Ceria (Bright & Cheerful)", 
                 "Gelap Elegan (Dark & Moody)", 
@@ -1071,14 +1100,18 @@ with col_f:
                 "Sinematik & Dramatis (Cinematic Lighting)", 
                 "Vintage & Retro (Nostalgia 90an)", 
                 "Soft & Pastel (Lembut & Feminin)", 
-                "Natural (Sinar Matahari Pagi)"
+                "Natural (Sinar Matahari Pagi)",
+                "Cyberpunk Neon (Lampu Kota Masa Depan)"
             ])
-        # --- BARIS BAWAH (Melebar Penuh) ---
         bg = st.selectbox("🖼️ Background Foto", list(BACKGROUND_OPTIONS.keys()))
         subjek = st.selectbox("👤 Subjek Foto", ["Produk saja", "1 Orang", "Keluarga"])
 
     st.markdown("<br>", unsafe_allow_html=True)
+    # EVENT LISTENER UTAMA: Menjalankan eksekusi pemanggilan REST API ke arsitektur LLM AI Agent eksternal
     if st.button("🚀 GENERATE IKLAN OTOMATIS", type="primary", use_container_width=True):
+        if not pasar_final: # Nama variabel target pasarmu
+         st.warning("Gagal! Kategori Target Pasar wajib diisi.")
+        st.stop() # Menghentikan seluruh proses Streamlit di bawahnya
         if not brand_name:
             st.warning("⚠️ Mohon isi nama brand/usaha terlebih dahulu!")
         else:
@@ -1104,10 +1137,10 @@ with col_f:
             st.rerun()
 
 # ============================================================
-# --- KOLOM KANAN: OUTPUT & REVISI ---
+# BLOK KANAN: MENYAJIKAN HASIL OUTPUT DATA & LOGIKA REVISI BOT
 # ============================================================
 with col_r:
-    # --- LANGKAH 4: COPYWRITING ---
+    # --- LANGKAH 4: RENDER KONTEN COPYWRITING ---
     st.markdown("""
     <div class="section-card-header">
         <div class="section-num">4</div>
@@ -1120,6 +1153,7 @@ with col_r:
 
     if st.session_state.main_txt:
         with st.container(border=True):
+            # Integrasi komponen boolean toggle switch untuk manipulasi status modifikasi string DOM secara manual
             edit_mode = st.toggle("✏️ Mode Edit Manual", help="Aktifkan untuk mengedit teks secara langsung")
 
             if edit_mode:
@@ -1133,11 +1167,11 @@ with col_r:
             else:
                 st.markdown(st.session_state.main_txt)
                 
-                # FITUR BARU: TOMBOL SALIN
+                # Fungsi penyajian plain-text untuk validasi format teks native ke clipboard sistem operasi (st.code)
                 with st.expander("📋 Tampilkan Teks Mentah (Klik ikon di pojok kanan atas blok untuk menyalin)"):
                     st.code(st.session_state.main_txt, language="markdown")
 
-            # QC PANEL
+            # Penyajian feedback string komprehensif dari hasil evaluasi otonom metrik Quality Control LLM Judge
             if st.session_state.get('ai_eval_result'):
                 st.markdown("""
                 <div class="qc-card">
@@ -1153,7 +1187,7 @@ with col_r:
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        # --- LANGKAH 5: VISUAL ---
+        # --- LANGKAH 5: EKSEKUSI PIPELINE PEMBUATAN VISUAL ---
         st.markdown("""
         <div class="section-card-header">
             <div class="section-num">5</div>
@@ -1175,6 +1209,7 @@ with col_r:
 
             st.info(f"💡 Klik tombol di bawah untuk membuat foto promosi secara otomatis dengan ukuran: **{st.session_state.image_size}**.")
 
+            # Mekanisme pelatuk asynchronous event handling menuju arsitektur Endpoint DALL-E image generation OpenAI
             if st.button("✨ Render Foto Studio (Otomatis)", type="primary", use_container_width=True):
                 with st.spinner("📸 Sedang di studio AI... Merender gambar (sekitar 1-2 menit)..."):
                     raw = generate_dalle_image(st.session_state.vis_prompt, st.session_state.image_size)
@@ -1195,7 +1230,7 @@ with col_r:
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        # --- LANGKAH 6: REVISI ---
+        # --- LANGKAH 6: CHATBOT INTERAKTIF UNTUK ITERASI REVISI MODEL ---
         st.markdown("""
         <div class="section-card-header">
             <div class="section-num">6</div>
@@ -1213,6 +1248,7 @@ with col_r:
                 with st.chat_message(msg["role"]):
                     st.markdown(msg["content"])
 
+            # Komponen binding input string logikal untuk mengelola siklus perulangan RAG Processing secara parsial
             revisi_input = st.chat_input("Ketik instruksi revisi di sini...")
             if revisi_input:
                 st.session_state.chat_history.append({"role": "user", "content": revisi_input})
@@ -1231,12 +1267,13 @@ with col_r:
                     st.rerun()
 
         # ============================================================
-        # --- FORM PENILAIAN UAT & ADMIN AREA ---
+        # MODUL PENILAIAN UAT (USER ACCEPTANCE TEST)
         # ============================================================
         st.markdown("<br><hr>", unsafe_allow_html=True)
         st.markdown("### 📝 Form Penilaian UAT ")
         st.caption("Silakan isi evaluasi kelayakan hasil *generate* AI di bawah ini untuk keperluan pengujian sistem.")
         
+        # Pengikatan data metrik objek form Streamlit untuk sinkronisasi Push Query ke Firestore Database eksternal
         with st.form("gform_mokap", clear_on_submit=True):
             f_bidang = st.selectbox("Bidang Hasil Pengujian", ["Bidang Food & Beverages", "Bidang Fashion", "Bidang Jasa","Bidang lainnya"])
             f_tester = st.text_input("Nama Penilai", value="", placeholder="Contoh: Nama Usaha ")
@@ -1264,7 +1301,7 @@ with col_r:
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        # Ambil data Cloud untuk Admin
+        # Proses Stream Pulling seluruh dokumen node pada Firestore Collection untuk keperluan kompilasi Dashboard Analitik
         cloud_eval_data = []
         cloud_usage_data = []
         if db:
@@ -1276,13 +1313,17 @@ with col_r:
         final_log_list = cloud_eval_data if db else st.session_state.skripsi_data
         final_usage_list = cloud_usage_data if db else st.session_state.usage_logs
 
+        # ============================================================
+        # MODUL DASHBOARD ADMINISTRATOR & AUDIT LOG ROOT LEVEL
+        # ============================================================
+        # Integrasi komponen kontainer rahasia (Expander) yang dienkapsulasi dengan logika otentikasi verifikasi key string
         with st.expander("🔐 Menu Admin & Database Log"):
             admin_pin = st.text_input("Masukkan PIN Admin:", type="password", placeholder="pin")
 
             if admin_pin == "12345678":
                 st.success("✅ Akses Admin Terbuka!")
 
-                # Status Sistem
+                # Indikator Diagnostik konektivitas sistem backend infrastruktur cloud service
                 st.markdown("#### ⚙️ Status Sistem & Sesi")
                 db_status_text = "Database Cloud Terkoneksi" if db else "Mode Lokal Aktif"
                 db_emoji = "🟢" if db else "🟡"
@@ -1294,7 +1335,7 @@ with col_r:
                     st.markdown(f"**Total Trafik Sistem:**<br>⚡ {len(final_usage_list)} Interaksi AI", unsafe_allow_html=True)
                 st.markdown("<hr>", unsafe_allow_html=True)
 
-                # TABEL LOG PENGGUNAAN AKTIVITAS
+                # Rendering frame tabular Dataframe Pandas untuk memuat matriks Log Payload API
                 st.markdown("#### 📡 Log Interaksi AI (Traffic)")
                 if final_usage_list:
                     df_usage = pd.DataFrame(final_usage_list)
@@ -1306,7 +1347,7 @@ with col_r:
 
                 st.markdown("<hr>", unsafe_allow_html=True)
 
-                # TABEL LOG EVALUASI UAT
+                # Rendering panel repositori hasil kompilasi kuesioner kuantitatif empiris pengujian sistem skripsi UAT
                 st.markdown("#### 🗄️ Database Hasil Penilaian UAT")
                 if final_log_list:
                     df_log = pd.DataFrame(final_log_list)
@@ -1327,7 +1368,7 @@ with col_r:
                 st.error("⚠️ PIN Salah! Akses ditolak.")
 
     else:
-        # Empty state
+        # Menangani state pemuatan DOM awal (Empty State UI) apabila pelatuk fungsi komputasi belum dijalankan klien
         st.markdown("""
         <div class="empty-state">
             <div class="empty-icon">📋</div>
