@@ -1,17 +1,18 @@
-import os
+import hmac
 import streamlit as st
 import re
-import io
 import base64
 import requests
 import openai
 import pandas as pd
-import json
 from datetime import datetime
 from pathlib import Path
-from PIL import Image
-import google.generativeai as genai
+from google import genai
+from google.genai import types as genai_types
 import formatter
+from api.copyright_check import CopyrightCheckError, run_google_lens_check
+from utils.branding import apply_dynamic_branding, crop_to_aspect_ratio
+from utils.evaluation import classify_quality_score, parse_quality_score
 
 # ==============================================================================
 # KONFIGURASI HALAMAN
@@ -616,21 +617,46 @@ BACKGROUND_OPTIONS = {
     "⬛ Studio Gelap Elegan": "dark matte studio background with dramatic side lighting"
 }
 
-# Mapping Aspek Rasio ke Ukuran Resolusi API OpenAI (DALL-E 3 / GPT Image 2 standard)
+# GPT Image menerima tiga ukuran API. Rasio platform yang lebih spesifik
+# dicapai lewat center-crop terkontrol setelah gambar selesai dirender.
 ASPECT_RATIO_OPTIONS = {
-    "1:1 (Persegi / IG Feed)": "1024x1024",
-    "9:16 (Potret / IG Story)": "1024x1792",
-    "16:9 (Lanskap / YouTube)": "1792x1024"
+    "1:1 (Persegi / IG Feed)": {
+        "api_size": "1024x1024",
+        "target_ratio": (1, 1),
+        "target_label": "1:1",
+    },
+    "9:16 (Potret / IG Story)": {
+        "api_size": "1024x1536",
+        "target_ratio": (9, 16),
+        "target_label": "9:16",
+    },
+    "16:9 (Lanskap / YouTube)": {
+        "api_size": "1536x1024",
+        "target_ratio": (16, 9),
+        "target_label": "16:9",
+    },
 }
 
 # ==============================================================================
 # INITIALIZE SESSION STATE
 # ==============================================================================
-for k in ['main_txt', 'vis_prompt', 'last_p', 'img_mem', 'chat_history', 'image_size']:
+for k in [
+    'main_txt',
+    'vis_prompt',
+    'last_p',
+    'img_mem',
+    'chat_history',
+    'image_size',
+    'target_ratio',
+    'target_ratio_label',
+    'copyright_result',
+]:
     if k not in st.session_state: st.session_state[k] = None
 if st.session_state.img_mem is None: st.session_state.img_mem = {"A": None}
 if st.session_state.chat_history is None: st.session_state.chat_history = []
 if st.session_state.image_size is None: st.session_state.image_size = "1024x1024"
+if st.session_state.target_ratio is None: st.session_state.target_ratio = (1, 1)
+if st.session_state.target_ratio_label is None: st.session_state.target_ratio_label = "1:1"
 
 # Tambahan untuk data skripsi
 if "skripsi_data" not in st.session_state: st.session_state.skripsi_data = []
@@ -640,9 +666,20 @@ if "usage_logs" not in st.session_state: st.session_state.usage_logs = []
 # ==============================================================================
 # FUNGSI PENANGANAN KREDENSIAL GCP & FIRESTORE
 # ==============================================================================
+def get_optional_secret(name):
+    try:
+        value = st.secrets.get(name)
+    except Exception:
+        return None
+    return str(value).strip() if value else None
+
+
 def load_gcp_credentials():
     from google.oauth2.service_account import Credentials
-    secret_keys = st.secrets.keys()
+    try:
+        secret_keys = st.secrets.keys()
+    except Exception:
+        return None, None
     target_key = "gcp_service_account" if "gcp_service_account" in secret_keys else "GCP_SERVICE_ACCOUNT" if "GCP_SERVICE_ACCOUNT" in secret_keys else None
     if target_key:
         try:
@@ -676,6 +713,20 @@ def catat_aktivitas_sistem(aktivitas, nama_brand):
     else:
         st.session_state.usage_logs.append(log_entry)
 
+
+def load_admin_logs():
+    """Load private logs only after admin authentication succeeds."""
+    if db:
+        try:
+            evaluations = [doc.to_dict() for doc in db.collection("evaluasi_skripsi").stream()]
+            usage = [doc.to_dict() for doc in db.collection("log_penggunaan").stream()]
+            return evaluations, usage
+        except Exception:
+            st.warning("Log cloud tidak dapat dimuat. Periksa izin Firestore.")
+            return [], []
+    return st.session_state.skripsi_data, st.session_state.usage_logs
+
+
 # ==============================================================================
 # ENGINE GENERATOR TEKS GEMINI SDK
 # ==============================================================================
@@ -686,9 +737,7 @@ class GeminiStudioWrapper:
 
     def invoke(self, messages):
         try:
-            genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-            model = genai.GenerativeModel(self.model_name, generation_config=genai.types.GenerationConfig(temperature=self.temperature))
-
+            client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
             contents = []
             msg = messages[0] if isinstance(messages, list) else messages
 
@@ -696,15 +745,26 @@ class GeminiStudioWrapper:
                 for part in msg.content:
                     if part.get("type") == "text": contents.append(part.get("text", ""))
                     elif part.get("type") == "image_url":
-                        b64_data = part["image_url"]["url"].split(",")[1]
-                        contents.append(Image.open(io.BytesIO(base64.b64decode(b64_data))))
+                        data_url = part["image_url"]["url"]
+                        header, encoded = data_url.split(",", 1)
+                        mime_type = header.split(":", 1)[1].split(";", 1)[0]
+                        contents.append(
+                            genai_types.Part.from_bytes(
+                                data=base64.b64decode(encoded),
+                                mime_type=mime_type,
+                            )
+                        )
             else:
                 contents.append(str(msg.content if hasattr(msg, 'content') else msg))
 
-            response = model.generate_content(contents)
+            response = client.models.generate_content(
+                model=self.model_name,
+                contents=contents,
+                config=genai_types.GenerateContentConfig(temperature=self.temperature),
+            )
             class AIResponse:
                 def __init__(self, text): self.content = text
-            return AIResponse(response.text)
+            return AIResponse(response.text or "")
         except Exception as e:
             class ErrorResponse:
                 def __init__(self): self.content = f"⚠️ Error API Teks: {str(e)}"
@@ -762,14 +822,21 @@ Jangan membuat gambar abstrak atau patung 3D geometris! Ide Visual harus berupa 
 """
 
 @st.cache_data(show_spinner=False)
-def generate_ad_text_master(kategori, brand_name, keywords_list, gaya, platform, market, mood, background, subjek, images_bytes_list, elemen_wajib, mode_promo, deskripsi_harga_global, list_produk, photo_descriptions=None):
+def generate_ad_text_master(kategori, brand_name, keywords_list, gaya, platform, market, mood, background, subjek, image_payloads, elemen_wajib, mode_promo, deskripsi_harga_global, list_produk, photo_descriptions=None):
     context = build_context_block(kategori, brand_name, keywords_list, gaya, platform, market, mood, background, subjek, elemen_wajib, mode_promo, deskripsi_harga_global, list_produk, photo_descriptions)
-    fidelity = "\n=== ATURAN VISUAL ===\nIde Visual HARUS mereplikasi BENTUK produk dari foto referensi persis.\n" if images_bytes_list else ""
+    fidelity = "\n=== ATURAN VISUAL ===\nIde Visual HARUS mereplikasi BENTUK produk dari foto referensi persis.\n" if image_payloads else ""
     full_prompt = f"{MASTER_PROMPT_FULL}\n{context}\n{fidelity}\n=== TUGAS: Buat Teks Iklan {platform} ==="
 
     parts = [{"type": "text", "text": full_prompt}]
-    for img_bytes in images_bytes_list:
-        parts.append({"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64.b64encode(img_bytes).decode('utf-8')}"}})
+    for image_bytes, mime_type in image_payloads:
+        parts.append(
+            {
+                "type": "image_url",
+                "image_url": {
+                    "url": f"data:{mime_type};base64,{base64.b64encode(image_bytes).decode('utf-8')}"
+                },
+            }
+        )
 
     class DummyMsg:
         def __init__(self, content): self.content = content
@@ -803,9 +870,18 @@ Kategori Usaha: {kategori}
 Naskah Iklan:
 {text_result}
 
-Berikan penilaian analitis dan ketat. Tampilkan output HANYA dalam format ini:
-SKOR KELAYAKAN: (Hanya tuliskan satu angka murni 1-100 di sini, tanpa simbol atau teks tambahan apapun)
-ANALISIS PAKAR: [Berikan 2-3 kalimat penjelasan mengapa skor tersebut diberikan, sebutkan kelebihan dan kekurangannya berdasarkan target pasar]
+Nilai secara ketat dengan bobot berikut:
+1. KONSISTENSI FAKTUAL (0-40): nama brand, produk, harga, promo, lokasi, dan klaim tidak boleh berubah atau dibuat-buat.
+2. KELENGKAPAN DOMAIN (0-30): elemen promosi penting sesuai kategori usaha dan call-to-action tercakup.
+3. KESESUAIAN PLATFORM & TONE (0-30): gaya, panjang, struktur, dan bahasa sesuai target platform dan audiens.
+
+Jangan memberi nilai atas tampilan visual karena input ini hanya naskah.
+Gunakan interpretasi: 85-100 lulus, 70-84 revisi minor, dan di bawah 70 perlu revisi.
+
+Tampilkan output HANYA dalam format berikut:
+SKOR KELAYAKAN: [angka bulat 0-100]
+RINCIAN: FAKTUAL [0-40] | DOMAIN [0-30] | PLATFORM [0-30]
+ANALISIS PAKAR: [2-4 kalimat yang menyebutkan kelebihan, kekurangan, dan perbaikan paling penting]
 """
     class DummyMsg:
         def __init__(self, content): self.content = content
@@ -813,50 +889,30 @@ ANALISIS PAKAR: [Berikan 2-3 kalimat penjelasan mengapa skor tersebut diberikan,
 # ==============================================================================
 # MODEL GENERATOR OPENAI (GPT-IMAGE-2 / DALL-E)
 # ==============================================================================
-def generate_dalle_image(prompt_text, res_size):
+def generate_dalle_image(prompt_text, res_size, target_ratio_label):
     if not prompt_text: return None
     try:
         client = openai.OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
-        context_anchor = f"Commercial product advertisement photography for '{st.session_state.get('brand_name', 'UMKM')}' showing realistic products of {  st.session_state.get('kategori', 'Product')}. Photorealistic, high quality, appetizing style, no abstract 3D figures, no geometric sculptures, "
+        context_anchor = (
+            f"Commercial product advertisement photography for "
+            f"'{st.session_state.get('brand_name', 'UMKM')}' showing realistic "
+            f"products of {st.session_state.get('kategori', 'Product')}. "
+            f"Compose all important subjects inside a centered {target_ratio_label} safe area. "
+            "Photorealistic, high quality, appetizing style, no abstract 3D figures, "
+            "no geometric sculptures, "
+        )
         safe_prompt = (context_anchor + prompt_text)[:900]
 
         res = client.images.generate(model="gpt-image-2", prompt=safe_prompt, size=res_size, n=1)
         if hasattr(res.data[0], 'url') and res.data[0].url:
-            return requests.get(res.data[0].url).content
+            image_response = requests.get(res.data[0].url, timeout=45)
+            image_response.raise_for_status()
+            return image_response.content
         if hasattr(res.data[0], 'b64_json') and res.data[0].b64_json:
             return base64.b64decode(res.data[0].b64_json)
     except Exception as e:
         st.error(f"Gagal memproses GPT Image: {e}")
         return None
-
-# ==============================================================================
-# POST-PROCESSING WATERMARK
-# ==============================================================================
-def apply_dynamic_branding(main_bytes, logo_file, posisi):
-    if not main_bytes or not logo_file: return main_bytes
-    try:
-        main_img = Image.open(io.BytesIO(main_bytes))
-        logo_img = Image.open(logo_file).convert('RGBA')
-        nw = int(main_img.width * 0.18)
-        nh = int(nw * (logo_img.height / logo_img.width))
-        logo_img = logo_img.resize((nw, nh), Image.Resampling.LANCZOS)
-
-        pad = 28
-        pos = (pad, pad) # Default Kiri Atas
-        
-        # Logika Penempatan Posisi Watermark
-        if "Kanan Atas" in posisi: pos = (main_img.width - nw - pad, pad)
-        elif "Kanan Bawah" in posisi: pos = (main_img.width - nw - pad, main_img.height - nh - pad)
-        elif "Kiri Bawah" in posisi: pos = (pad, main_img.height - nh - pad)
-        elif "Tengah Bawah" in posisi: pos = ((main_img.width - nw) // 2, main_img.height - nh - pad)
-        elif "Tengah Atas" in posisi: pos = ((main_img.width - nw) // 2, pad)
-
-        res = main_img.copy()
-        res.paste(logo_img, pos, logo_img)
-        out = io.BytesIO()
-        res.save(out, format='PNG')
-        return out.getvalue()
-    except Exception: return main_bytes
 
 # ==============================================================================
 # HITUNG STEP AKTIF UNTUK STEPPER
@@ -921,6 +977,15 @@ with col_f:
             logo_file = st.file_uploader("Upload Logo UMKM", type=['png', 'jpg', 'jpeg', 'webp'], help="Format PNG transparan paling direkomendasikan")
         with col_l2:
             posisi_logo = st.selectbox("Posisi Logo", ["Kanan Atas", "Kiri Atas", "Kanan Bawah", "Kiri Bawah", "Tengah Bawah", "Tengah Atas"])
+
+        with st.expander("🎨 Pengaturan Logo Lanjutan", expanded=False):
+            logo_col1, logo_col2 = st.columns(2)
+            with logo_col1:
+                logo_width_percent = st.slider("Ukuran Logo", 8, 30, 18, format="%d%%")
+                logo_opacity_percent = st.slider("Opacity Logo", 30, 100, 90, format="%d%%")
+            with logo_col2:
+                logo_shadow = st.toggle("Soft Shadow", value=True)
+                st.caption("Shadow dan opacity membantu logo menyatu dengan visual tanpa kehilangan keterbacaan.")
         
         st.markdown("##### 🎯 Target Market & Audiens")
         
@@ -1024,8 +1089,11 @@ with col_f:
         foto_produk = st.file_uploader("📷 Upload Foto Referensi Produk", type=['png', 'jpg', 'jpeg', 'webp'], accept_multiple_files=True, help="Maksimal 3 foto. AI akan menganalisa bentuk fisik produk")
         foto_desc = []
         if foto_produk:
+            if len(foto_produk) > 3:
+                st.warning("Maksimal tiga foto referensi. Hanya tiga file pertama yang akan diproses.")
+                foto_produk = foto_produk[:3]
             st.markdown('<div class="photo-caption-box">🏷️ <b>Beri keterangan singkat tiap foto</b> agar AI lebih akurat</div>', unsafe_allow_html=True)
-            for i, f in enumerate(foto_produk[:3]):
+            for i, f in enumerate(foto_produk):
                 c1, c2 = st.columns([1, 2.5])
                 with c1: st.image(f, use_container_width=True)
                 with c2: foto_desc.append(st.text_input(f"Keterangan Foto {i+1}", key=f"f_{i}", placeholder=f"Contoh: Bakso sapi premium", label_visibility="collapsed"))
@@ -1048,7 +1116,10 @@ with col_f:
             platform = st.radio("📱 Platform Target", ["Instagram", "WhatsApp", "TikTok"], horizontal=True)
         with col2:
             rasio_pilihan = st.selectbox("📐 Aspek Rasio", list(ASPECT_RATIO_OPTIONS.keys()))
-            st.session_state.image_size = ASPECT_RATIO_OPTIONS[rasio_pilihan]
+            ratio_config = ASPECT_RATIO_OPTIONS[rasio_pilihan]
+            st.session_state.image_size = ratio_config["api_size"]
+            st.session_state.target_ratio = ratio_config["target_ratio"]
+            st.session_state.target_ratio_label = ratio_config["target_label"]
 
             # --- BARIS 2 ---
         col3, col4 = st.columns(2)
@@ -1085,11 +1156,15 @@ with col_f:
             st.session_state.img_mem = {"A": None}
             st.session_state.chat_history = []
             st.session_state.ai_eval_result = None
+            st.session_state.copyright_result = None
 
             with st.spinner("🤖 Agent 1: AI sedang meracik copywriting profesional..."):
-                img_bytes = [f.getvalue() for f in foto_produk] if foto_produk else []
+                image_payloads = [
+                    (file.getvalue(), file.type or "image/jpeg")
+                    for file in foto_produk
+                ] if foto_produk else []
                 res = generate_ad_text_master(
-                    kategori_final, brand_name, keywords, gaya, platform, market, mood, bg, subjek, img_bytes,
+                    kategori_final, brand_name, keywords, gaya, platform, market, mood, bg, subjek, image_payloads,
                     get_elemen_wajib(kategori_raw), mode_promo, deskripsi_harga_global,
                     st.session_state.daftar_produk_umkm, foto_desc
                 )
@@ -1150,38 +1225,45 @@ with col_r:
             # QC PANEL
             if st.session_state.get('ai_eval_result'):
                 hasil_evaluasi = st.session_state.ai_eval_result
-                
-                # 1. Cari angka skor pakai Regex
-                match = re.search(r'SKOR KELAYAKAN:\s*(\d+)', hasil_evaluasi)
-                skor = 100 # Default jika regex gagal membaca
-                if match:
-                    skor = int(match.group(1))
+                skor = parse_quality_score(hasil_evaluasi)
+                band = None
 
-                # 2. Logika Penilaian (Batas Minimal = 70)
-                if skor >= 70:
-                    # LULUS (Kotak Hijau)
+                if skor is None:
+                    st.warning("Format skor dari evaluator tidak valid. Buka detail analisis lalu generate ulang evaluasi.")
+                else:
+                    band = classify_quality_score(skor)
+
+                if band and band["code"] == "pass":
                     st.markdown(f"""
                     <div class="qc-card" style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border-color: #6ee7b7;">
                         <div class="qc-icon">✅</div>
                         <div>
-                            <div class="qc-title">Lulus Uji Kualitas Pakar AI</div>
-                            <div class="qc-sub">Copywriting memenuhi standar promosi (Skor: {skor}/100)</div>
+                            <div class="qc-title">{band["label"]}</div>
+                            <div class="qc-sub">{band["summary"]} (Skor: {skor}/100)</div>
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
-                else:
-                    # TIDAK LULUS (Kotak Merah Peringatan)
+                elif band and band["code"] == "minor":
+                    st.markdown(f"""
+                    <div class="qc-card" style="background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border-color: #fbbf24;">
+                        <div class="qc-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">🛠️</div>
+                        <div>
+                            <div class="qc-title" style="color: #92400e;">{band["label"]}</div>
+                            <div class="qc-sub" style="color: #b45309;">{band["summary"]} (Skor: {skor}/100)</div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                elif band:
                     st.markdown(f"""
                     <div class="qc-card" style="background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%); border-color: #fca5a5;">
                         <div class="qc-icon" style="background: linear-gradient(135deg, #e11d48, #be123c);">⚠️</div>
                         <div>
-                            <div class="qc-title" style="color: #9f1239;">Perlu Revisi (Tidak Lulus QC)</div>
-                            <div class="qc-sub" style="color: #e11d48;">Kualitas konten di bawah standar (Skor: {skor}/100)</div>
+                            <div class="qc-title" style="color: #9f1239;">{band["label"]}</div>
+                            <div class="qc-sub" style="color: #e11d48;">{band["summary"]} (Skor: {skor}/100)</div>
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
 
-                # Memunculkan teks alasannya
                 with st.expander("📊 Lihat Detail Analisis Pakar AI"):
                     st.markdown(hasil_evaluasi)
 
@@ -1207,12 +1289,34 @@ with col_r:
                     label_visibility="collapsed"
                 )
 
-            st.info(f"💡 Klik tombol di bawah untuk membuat foto promosi secara otomatis dengan ukuran: **{st.session_state.image_size}**.")
+            st.info(
+                "💡 Output API akan dirender pada "
+                f"**{st.session_state.image_size}**, lalu disesuaikan ke target "
+                f"**{st.session_state.target_ratio_label}** dengan center-crop."
+            )
 
             if st.button("✨ Render Foto Studio (Otomatis)", type="primary", use_container_width=True):
                 with st.spinner("📸 Sedang di studio AI... Merender gambar (sekitar 1-2 menit)..."):
-                    raw = generate_dalle_image(st.session_state.vis_prompt, st.session_state.image_size)
-                    st.session_state.img_mem["A"] = apply_dynamic_branding(raw, logo_file, posisi_logo) if raw else None
+                    raw = generate_dalle_image(
+                        st.session_state.vis_prompt,
+                        st.session_state.image_size,
+                        st.session_state.target_ratio_label,
+                    )
+                    if raw:
+                        processed = crop_to_aspect_ratio(raw, st.session_state.target_ratio)
+                        if logo_file:
+                            processed = apply_dynamic_branding(
+                                processed,
+                                logo_file,
+                                posisi_logo,
+                                width_ratio=logo_width_percent / 100,
+                                opacity=logo_opacity_percent / 100,
+                                shadow=logo_shadow,
+                            )
+                        st.session_state.img_mem["A"] = processed
+                        st.session_state.copyright_result = None
+                    else:
+                        st.session_state.img_mem["A"] = None
                 catat_aktivitas_sistem("Render Visual Image", st.session_state.get('brand_name', 'UMKM'))
                 st.rerun()
 
@@ -1226,6 +1330,71 @@ with col_r:
                     mime="image/png",
                     use_container_width=True
                 )
+
+                st.markdown("##### 🔎 Pemeriksaan Kemiripan Visual (Opsional)")
+                st.caption(
+                    "Gambar dikirim sementara ke ImgBB lalu diperiksa melalui Google Lens/SerpAPI. "
+                    "Jalankan hanya bila Anda menyetujui pengiriman tersebut."
+                )
+                imgbb_api_key = get_optional_secret("IMGBB_API_KEY")
+                serpapi_api_key = get_optional_secret("SERPAPI_API_KEY")
+                copyright_ready = bool(imgbb_api_key and serpapi_api_key)
+
+                if not copyright_ready:
+                    st.info(
+                        "Tambahkan `IMGBB_API_KEY` dan `SERPAPI_API_KEY` ke "
+                        "`.streamlit/secrets.toml` untuk mengaktifkan pemeriksaan."
+                    )
+
+                if st.button(
+                    "Jalankan Reverse Image Search",
+                    use_container_width=True,
+                    disabled=not copyright_ready,
+                    key="copyright_check_button",
+                ):
+                    with st.spinner("Mencari padanan visual..."):
+                        try:
+                            st.session_state.copyright_result = run_google_lens_check(
+                                st.session_state.img_mem["A"],
+                                imgbb_api_key=imgbb_api_key,
+                                serpapi_api_key=serpapi_api_key,
+                            )
+                            catat_aktivitas_sistem(
+                                "Copyright Similarity Check",
+                                st.session_state.get('brand_name', 'UMKM'),
+                            )
+                        except CopyrightCheckError as exc:
+                            st.session_state.copyright_result = {"error": str(exc)}
+
+                copyright_result = st.session_state.get("copyright_result")
+                if copyright_result:
+                    if copyright_result.get("error"):
+                        st.warning(copyright_result["error"])
+                    else:
+                        risk = copyright_result["risk"]
+                        if risk["code"] == "low":
+                            st.success(f"**{risk['label']}** — {risk['summary']}")
+                        elif risk["code"] == "review":
+                            st.warning(f"**{risk['label']}** — {risk['summary']}")
+                        else:
+                            st.error(f"**{risk['label']}** — {risk['summary']}")
+
+                        st.caption(
+                            f"Padanan visual ditemukan: {copyright_result['match_count']}. "
+                            f"{copyright_result['disclaimer']}"
+                        )
+                        for index, match_item in enumerate(copyright_result["matches"], 1):
+                            label = match_item["title"]
+                            if match_item["source"]:
+                                label = f"{label} — {match_item['source']}"
+                            if match_item["link"]:
+                                st.link_button(
+                                    f"{index}. {label}",
+                                    match_item["link"],
+                                    use_container_width=True,
+                                )
+                            else:
+                                st.write(f"{index}. {label}")
 
         st.markdown("<br>", unsafe_allow_html=True)
 
@@ -1298,23 +1467,20 @@ with col_r:
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        # Ambil data Cloud untuk Admin
-        cloud_eval_data = []
-        cloud_usage_data = []
-        if db:
-            try: 
-                cloud_eval_data = [doc.to_dict() for doc in db.collection("evaluasi_skripsi").stream()]
-                cloud_usage_data = [doc.to_dict() for doc in db.collection("log_penggunaan").stream()]
-            except Exception: pass
-
-        final_log_list = cloud_eval_data if db else st.session_state.skripsi_data
-        final_usage_list = cloud_usage_data if db else st.session_state.usage_logs
-
         with st.expander("🔐 Menu Admin & Database Log"):
-            admin_pin = st.text_input("Masukkan PIN Admin:", type="password", placeholder="pin")
+            admin_pin_config = get_optional_secret("ADMIN_PIN")
+            admin_pin = st.text_input(
+                "Masukkan PIN Admin:",
+                type="password",
+                placeholder="PIN admin",
+                disabled=not admin_pin_config,
+            )
 
-            if admin_pin == "12345678":
+            if not admin_pin_config:
+                st.info("Menu admin dinonaktifkan. Tambahkan `ADMIN_PIN` ke secrets untuk mengaktifkannya.")
+            elif admin_pin and hmac.compare_digest(admin_pin, admin_pin_config):
                 st.success("✅ Akses Admin Terbuka!")
+                final_log_list, final_usage_list = load_admin_logs()
 
                 # Status Sistem
                 st.markdown("#### ⚙️ Status Sistem & Sesi")

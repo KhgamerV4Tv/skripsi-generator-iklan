@@ -7,11 +7,17 @@
 To maintain architectural integrity and prevent codebase pollution, all autonomous agents must strictly adhere to the following rules:
 
 ### 1. Historical Files
-**CRITICAL:** Do NOT modify, delete, or rename any historical iteration files (e.g., `app2.py`, `app3.py` ... `app22.py`).
-These files serve as snapshots of previous project states and are preserved for thesis documentation and backup purposes.
+**CRITICAL:** Do NOT modify, delete, or rename historical iteration files unless the project owner explicitly identifies one as an active target.
+The project owner has explicitly confirmed that **`app15.py` is the source used by the live Streamlit demo**, so scoped maintenance of `app15.py` is allowed. Other numbered files remain research snapshots unless the owner reclassifies them.
 
 ### 2. Active Development
-All new active development should target the most recent primary files. Based on the latest updates, **`app.py`** and **`app21.py`** are the current active targets. When asked to implement a new feature, verify with the user or check the latest modification timestamps to confirm which of these two is the primary target for the specific task.
+Use these roles:
+
+* **`app15.py`**: owner-confirmed live demo/deployment entry point (V21 Pro).
+* **`app.py`**: refactored modernization/reference target for continued development.
+* **Other `appXX.py` files**: historical snapshots unless explicitly reclassified by the owner.
+
+Do not infer the active deployment file from numbering or modification timestamps; prefer the owner's explicit statement and the deployment configuration.
 
 ### 3. Folder Structure & Architecture (Proposed Refactoring)
 The repository currently has a flat structure with many `appXX.py` files in the root. Moving forward, agents should organize new logic according to the following proposed structure to maintain a clean workspace. If these folders do not exist, create them as needed:
