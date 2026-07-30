@@ -11,6 +11,7 @@ from datetime import datetime
 from pathlib import Path
 from PIL import Image
 import google.generativeai as genai
+import formatter
 
 # ==============================================================================
 # KONFIGURASI HALAMAN
@@ -1135,6 +1136,16 @@ with col_r:
                 # FITUR BARU: TOMBOL SALIN
                 with st.expander("📋 Tampilkan Teks Mentah (Klik ikon di pojok kanan atas blok untuk menyalin)"):
                     st.code(st.session_state.main_txt, language="markdown")
+                
+                # FITUR BARU: TOMBOL DOWNLOAD DOCX
+                docx_bytes = formatter.create_docx(st.session_state.main_txt)
+                st.download_button(
+                    label="📄 Download Laporan DOCX (Format Skripsi UK Petra)",
+                    data=docx_bytes,
+                    file_name="Laporan_Copywriting_AI.docx",
+                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    use_container_width=True
+                )
 
             # QC PANEL
             if st.session_state.get('ai_eval_result'):

@@ -7,3 +7,4 @@ langchain-google-vertexai>=1.0.5
 google-cloud-aiplatform>=1.52.0
 google-cloud-firestore
 google-search-results>=2.4.2
+python-docx>=1.1.2
